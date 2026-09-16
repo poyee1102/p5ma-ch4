@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="面積魔術師：平行四邊形" />
+  <title>面積魔術師：平行四邊形</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --pink: #ff7eb6; --pink-deep: #ee4d93;
+      --sky: #5cc8ff; --sky-deep: #2a9adf;
+      --lemon: #ffe066; --lemon-deep: #e4b82a;
+      --lilac: #c9b6ff; --lilac-deep: #9b7af0;
+      --mint: #7eecc8; --mint-deep: #3cbc9a;
+      --ink: #3b2a55; --soft: #7a6588;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      width: 100%; height: 100%; height: 100dvh;
+      overflow: hidden; overscroll-behavior: none;
+    }
+    body {
+      position: fixed; inset: 0;
+      font-family: "Noto Sans TC", "PingFang HK", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(186,255,226,0.7) 0%, rgba(186,255,226,0) 38%),
+        linear-gradient(120deg, rgba(200,232,255,0.65) 0%, rgba(200,232,255,0) 42%),
+        linear-gradient(210deg, rgba(255,214,234,0.65) 20%, rgba(255,214,234,0) 58%),
+        linear-gradient(165deg, #e4fff6 0%, #e4f4ff 42%, #ffe8f3 78%, #fff6c4 100%);
+      user-select: none;
+    }
+    .fun-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .fun-bg svg { width: 100%; height: 100%; display: block; }
+    button, input { font-family: inherit; }
+    button { cursor: pointer; touch-action: manipulation; }
+    input { user-select: text; -webkit-user-select: text; }
+
+    @keyframes popIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+    @keyframes bounce { 0% { transform: scale(1); } 35% { transform: scale(0.88); } 70% { transform: scale(1.08); } 100% { transform: scale(1); } }
+    @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 0 rgba(255, 224, 102, 0)); }
+      50% { filter: drop-shadow(0 0 10px rgba(255, 224, 102, 0.85)); }
+    }
+    .bounce { animation: bounce 0.35s ease; }
+    .shake { animation: shake 0.4s ease; }
+
+    .app {
+      position: relative; z-index: 1;
+      height: 100%; width: 100%; overflow: hidden; display: flex;
+      padding: calc(6px + var(--safe-t)) calc(8px + var(--safe-r)) calc(6px + var(--safe-b)) calc(8px + var(--safe-l));
+    }
+    .screen {
+      display: none; width: min(1280px, 100%); margin: 0 auto;
+      height: 100%; min-height: 0; flex-direction: column; overflow: hidden;
+      animation: popIn 0.35s ease;
+    }
+    .screen.active { display: flex; }
+    .card {
+      background: rgba(255,255,255,0.92); border: 3px solid #fff; border-radius: 26px;
+      box-shadow: 0 14px 30px rgba(155, 122, 240, 0.18); min-height: 0; color: var(--ink);
+    }
+    .candy {
+      border: 0; border-radius: 999px; font-weight: 900; padding: 10px 18px;
+      transition: transform 0.12s ease, filter 0.12s ease;
+    }
+    .candy:hover { filter: brightness(1.05); }
+    .candy:active { transform: translateY(4px) scale(0.96); box-shadow: 0 2px 0 rgba(0,0,0,0.18) !important; animation: bounce 0.3s ease; }
+    .candy:disabled { filter: saturate(0.55); pointer-events: none; }
+    .sky { background: var(--sky); color: #0a3a5c; box-shadow: 0 6px 0 var(--sky-deep); }
+    .pink { background: var(--pink); color: #fff; box-shadow: 0 6px 0 var(--pink-deep); }
+    .lemon { background: var(--lemon); color: var(--ink); box-shadow: 0 6px 0 var(--lemon-deep); }
+    .mint { background: var(--mint); color: #165f4c; box-shadow: 0 6px 0 var(--mint-deep); }
+    .lilac { background: var(--lilac); color: #fff; box-shadow: 0 6px 0 var(--lilac-deep); }
+    .ghost { background: #fff; color: var(--soft); box-shadow: 0 5px 0 #ecd6de; }
+
+    #screen-login { align-items: center; justify-content: center; }
+    .login { width: min(400px, 100%); padding: 22px 18px 16px; text-align: center; }
+    .mascot {
+      width: 72px; height: 72px; margin: 0 auto 6px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 36px; background: #fff;
+      box-shadow: 0 8px 0 #ffc2e0;
+      animation: floaty 2.8s ease-in-out infinite;
+    }
+    .title {
+      font-family: "Fredoka", "Noto Sans TC", sans-serif;
+      font-size: clamp(22px, 5vh, 34px); font-weight: 900; letter-spacing: 0.04em;
+      margin-bottom: 14px; line-height: 1.3;
+      background: none; border: 0; box-shadow: none; padding: 0; text-shadow: none;
+    }
+    .title span:nth-child(odd) { color: var(--pink-deep); }
+    .title span:nth-child(even) { color: var(--lilac-deep); }
+    .field { text-align: left; margin-bottom: 10px; }
+    .field label { display: block; font-weight: 900; font-size: 15px; margin-bottom: 4px; }
+    .field input {
+      width: 100%; border: 3px solid #ffe1ec; border-radius: 16px;
+      padding: 10px 12px; font-size: 18px; font-weight: 800; outline: none; background: #fff;
+    }
+    .field input:focus { border-color: var(--pink); }
+    .start { width: 100%; font-size: 22px; padding: 12px; margin: 6px 0 10px; }
+    .teacher-btn {
+      width: 64px; height: 64px; border-radius: 50%; font-size: 13px; line-height: 1.15;
+      padding: 0; margin: 4px auto 0; display: grid; place-items: center;
+    }
+    .login-acts {
+      display: flex; flex-wrap: nowrap; justify-content: center; align-items: center;
+      gap: 22px; margin-top: 4px;
+    }
+    .login-acts .teacher-btn {
+      margin: 0; padding: 0; width: 64px; height: 64px; min-width: 64px;
+      flex: 0 0 64px; font-size: 13px; line-height: 1.2;
+    }
+    .rank-note {
+      flex-shrink: 0; font-family: "Fredoka", "Noto Sans TC", sans-serif;
+      font-weight: 900; font-size: clamp(24px, 3.6vh, 32px); line-height: 1.3;
+      color: var(--pink-deep); text-align: center; letter-spacing: 0.04em;
+    }
+    tr.r1 td { background: #fff6c9; }
+    tr.r2 td { background: #eef2f7; }
+    tr.r3 td { background: #f8ead8; }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0; margin-bottom: 4px; overflow: visible; }
+    .pill {
+      background: #fff; color: var(--ink); border-radius: 999px; padding: 6px 12px;
+      font-weight: 800; font-size: 14px; box-shadow: 0 4px 0 #f0d7e2; white-space: nowrap;
+    }
+    .timer-wrap { position: relative; flex-shrink: 0; }
+    .timer { font-variant-numeric: tabular-nums; background: #fff4cc; min-width: 92px; text-align: center; }
+    .timer.low, .timer.hit { background: #ffd0d8; color: #b42318; }
+    .timer.hit { animation: shake 0.4s ease; }
+    .time-hit {
+      position: absolute; left: 50%; top: 50%; z-index: 3;
+      font-weight: 900; font-size: 16px; color: #b42318;
+      pointer-events: none; opacity: 0; white-space: nowrap;
+      text-shadow: 0 1px 0 #fff, 0 0 8px #fff;
+    }
+    .time-hit.show { animation: timeHitPop 0.7s ease; }
+    @keyframes timeHitPop {
+      0% { opacity: 0; transform: translate(-50%, -40%) scale(0.8); }
+      22% { opacity: 1; transform: translate(-50%, -110%) scale(1.12); }
+      100% { opacity: 0; transform: translate(-50%, -160%) scale(0.96); }
+    }
+    .tiny { padding: 6px 12px; font-size: 13px; }
+
+    .play { flex: 1; min-height: 0; overflow: hidden; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .task-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-shrink: 0; }
+    .task-h h2 { font-size: clamp(18px, 2.6vh, 24px); line-height: 1.3; }
+    .task-h p { font-size: 16px; font-weight: 900; color: var(--soft); white-space: nowrap; }
+    .hintbar {
+      flex-shrink: 0; font-size: clamp(18px, 2.8vh, 24px); font-weight: 800; color: #5a4a72;
+      background: #f4edff; border-radius: 14px; padding: 8px 12px; text-align: center;
+      line-height: 1.35;
+    }
+    .board {
+      flex: 1; min-height: 0; position: relative;
+      display: flex; align-items: stretch; justify-content: center;
+      background: linear-gradient(180deg, #fff, #f7f4ff);
+      border-radius: 22px; overflow: hidden;
+      box-shadow: inset 0 0 0 2px rgba(201, 182, 255, 0.4);
+      touch-action: none;
+    }
+    .board::before, .board::after {
+      content: ""; position: absolute; width: 36px; height: 12px; z-index: 2; pointer-events: none;
+      background: rgba(255, 224, 102, 0.88); border-radius: 2px;
+      box-shadow: 0 2px 0 rgba(228, 184, 42, 0.35);
+    }
+    .board::before { top: 10px; left: 14px; transform: rotate(-18deg); }
+    .board::after { top: 12px; right: 16px; transform: rotate(16deg); }
+    #scene { width: 100%; height: 100%; display: block; touch-action: none; cursor: pointer; }
+    #scene.dragging { cursor: grabbing; }
+
+    .idea {
+      display: none; position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 6;
+      background: rgba(255,255,255,0.97); border: 3px solid #ffe066; border-radius: 18px;
+      padding: 10px 12px 12px; text-align: center;
+      box-shadow: 0 12px 28px rgba(155, 122, 240, 0.22);
+      animation: popIn 0.35s ease;
+    }
+    .idea.show { display: block; }
+    .idea p {
+      font-weight: 800; font-size: clamp(12px, 1.85vh, 16px); line-height: 1.4;
+      margin-bottom: 8px; text-align: left;
+    }
+    .idea .candy { min-width: 140px; }
+
+    .choice-row { display: flex; gap: 8px; flex-shrink: 0; align-items: stretch; }
+    .choice-row .candy {
+      flex: 1; font-size: clamp(16px, 2.5vh, 20px); padding: 12px 8px;
+      display: inline-flex; align-items: center; justify-content: center;
+      text-align: center; line-height: 1.2;
+    }
+    .opt-col { display: none; flex-direction: column; gap: 8px; flex-shrink: 0; }
+    .opt-col.show { display: flex; }
+    .opt-col .candy { width: 100%; text-align: center; font-size: clamp(17px, 2.6vh, 22px); padding: 12px 8px; }
+    .toast {
+      display: none; flex-shrink: 0; border-radius: 16px; padding: 8px 14px;
+      font-weight: 900; font-size: clamp(16px, 2.4vh, 20px); text-align: center; line-height: 1.35;
+    }
+    .toast.show { display: block; }
+    .toast.good { background: #e4faf2; border: 2px solid #7eecc8; color: #165f4c; }
+    .toast.bad { background: #fff1f1; border: 2px solid #ffb4b4; color: #b42318; }
+
+    .report {
+      position: fixed; inset: 0; background: rgba(59, 42, 85, 0.42);
+      display: none; place-items: center; z-index: 25; padding: 16px;
+    }
+    .report.show { display: grid; }
+    .report-card {
+      width: min(520px, 100%); background: #fff; border-radius: 32px;
+      padding: 22px 20px 18px; text-align: center; border: 4px solid #fff;
+      box-shadow: 0 18px 40px rgba(255, 126, 182, 0.28); animation: popIn 0.4s ease; color: var(--ink);
+    }
+    .report-card h2 { font-size: clamp(22px, 3.4vh, 28px); margin: 8px 0 10px; }
+    .report-card p { font-weight: 800; line-height: 1.55; margin: 8px 0; font-size: 16px; }
+    .tip {
+      background: #f4edff; border-radius: 18px; padding: 12px 14px; margin: 12px 0 16px;
+      font-weight: 800; line-height: 1.6; text-align: left; white-space: pre-wrap;
+    }
+
+    .dash-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-shrink: 0; margin-bottom: 8px; }
+    .dash-h h1 { font-family: "Fredoka", "Noto Sans TC", sans-serif; font-size: clamp(20px, 3vh, 28px); color: var(--ink); }
+    .dash-h .acts { display: flex; gap: 8px; margin: 0; }
+    .dash { flex: 1; min-height: 0; overflow: hidden; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex-shrink: 0; }
+    .stat { border-radius: 16px; padding: 10px; }
+    .stat b { display: block; font-size: 12px; opacity: 0.8; }
+    .stat strong { font-size: clamp(16px, 2.6vh, 24px); display: block; line-height: 1.2; }
+    .s1 { background: #ffe1ea; } .s2 { background: #d9f8ee; } .s3 { background: #efe6ff; }
+    .tools { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 8px; flex-wrap: wrap; }
+    .tools select, .tools button.tiny { border: 2px solid #ffe1ec; border-radius: 12px; padding: 4px 8px; font-weight: 800; background: #fff; }
+    .tool-filters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .dash-src { font-size: 12px; font-weight: 800; color: var(--soft); }
+    .dash-count { font-size: 12px; font-weight: 800; color: var(--soft); }
+    .records { flex: 1; min-height: 0; overflow: auto; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(16,36,63,0.08); font-size: 12px; }
+    td.diag { white-space: pre-line; }
+    th { background: #fff3f8; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
+    th.col-h { padding-right: 4px; }
+    .col-sort { border: 0; background: transparent; font: inherit; font-weight: 900; cursor: pointer; padding: 0; }
+    th.sorted .col-sort { color: #ee4d93; }
+    .filter-btn {
+      border: 0; background: #ffe1ec; color: var(--ink); cursor: pointer;
+      border-radius: 8px; width: 22px; height: 22px; margin-left: 4px;
+      font-size: 12px; font-weight: 900; line-height: 1; vertical-align: middle;
+    }
+    .filter-btn.on { background: var(--pink); color: #fff; }
+    .score-cell { font-variant-numeric: tabular-nums; font-weight: 900; text-align: center; }
+    th.score-h, td.rank-cell { text-align: center; font-variant-numeric: tabular-nums; }
+    tr.hi .score-cell { color: #1a8f7c; }
+    tr.lo .score-cell { color: #b42318; }
+    .empty { text-align: center; padding: 20px; font-weight: 800; color: var(--soft); }
+    .filter-menu {
+      position: fixed; z-index: 30; width: min(280px, calc(100vw - 16px));
+      background: #fff; border-radius: 18px; padding: 10px;
+      box-shadow: 0 16px 36px rgba(59,42,85,0.24); border: 2px solid #ffe1ec;
+      display: none; flex-direction: column; gap: 8px; max-height: min(420px, 70vh);
+    }
+    .filter-menu.show { display: flex; }
+    .filter-menu .fm-title { font-weight: 900; font-size: 14px; text-align: left; }
+    .filter-menu .fm-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-menu .fm-acts button {
+      border: 0; border-radius: 999px; font-weight: 900; padding: 6px 10px; font-size: 12px;
+      background: #f6f0ff; color: var(--ink); cursor: pointer;
+    }
+    .filter-menu input[type="search"] {
+      width: 100%; border: 2px solid #ffe1ec; border-radius: 12px;
+      padding: 6px 8px; font-weight: 800; font-size: 14px;
+    }
+    .filter-menu .opts { overflow: auto; text-align: left; flex: 1; min-height: 80px; }
+    .filter-menu label { display: flex; gap: 8px; align-items: flex-start; padding: 5px 2px; font-weight: 800; font-size: 13px; cursor: pointer; }
+    .filter-menu label input { margin-top: 2px; }
+
+    .modal { position: fixed; inset: 0; background: rgba(59,42,85,0.4); display: none; place-items: center; z-index: 20; padding: 16px; }
+    .modal.show { display: grid; }
+    .modal-card { width: min(360px, 100%); background: #fff; border-radius: 24px; padding: 18px; text-align: center; color: var(--ink); }
+    .modal-card input {
+      width: 100%; border: 3px solid #ffe1ec; border-radius: 14px;
+      padding: 10px; font-size: 20px; font-weight: 800; text-align: center; margin: 10px 0;
+    }
+    canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+
+    @media (max-height: 720px) {
+      .mascot { width: 56px; height: 56px; font-size: 26px; }
+      .teacher-btn, .login-acts .teacher-btn { width: 52px; height: 52px; min-width: 52px; flex-basis: 52px; font-size: 12px; }
+      .choice-row .candy { padding: 10px 6px; font-size: 16px; }
+      .hintbar { font-size: 17px; padding: 6px 10px; }
+    }
+    @media print {
+      html, body, .app, .screen.active { position: static; height: auto; overflow: visible; }
+      .no-print, canvas, .report, .modal, .filter-menu, .filter-btn { display: none !important; }
+      .records { overflow: visible; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <div class="fun-bg" aria-hidden="true">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" focusable="false">
+      <g fill="#b8f3de" opacity="0.55">
+        <polygon points="12,10 20,14 12,18 4,14"/>
+        <polygon points="86,8 96,13 86,18 76,13"/>
+        <polygon points="50,4 58,8 50,12 42,8"/>
+      </g>
+      <g fill="#ffe4f2" opacity="0.7">
+        <polygon points="10,86 22,92 10,98 -2,92"/>
+        <polygon points="28,80 36,84 28,88 20,84"/>
+      </g>
+      <g fill="#e4f6ff" opacity="0.75">
+        <polygon points="92,78 102,84 92,90 82,84"/>
+        <polygon points="78,88 88,93 78,98 68,93"/>
+      </g>
+      <g fill="#fff6c9" opacity="0.7">
+        <polygon points="50,88 60,93 50,98 40,93"/>
+      </g>
+    </svg>
+  </div>
+  <canvas id="confetti"></canvas>
+  <div class="app">
+    <section id="screen-login" class="screen active">
+      <div class="card login">
+        <div class="mascot">🪄</div>
+        <h1 class="title" id="titleWave"></h1>
+        <div class="field">
+          <label for="classId">班別</label>
+          <input id="classId" maxlength="8" placeholder="5A" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="studentId">學號</label>
+          <input id="studentId" maxlength="6" placeholder="01" inputmode="numeric" autocomplete="off" />
+        </div>
+        <button class="candy pink start" id="startBtn">開始任務</button>
+        <div class="login-acts">
+          <button class="candy mint teacher-btn" id="rankBtn">學生<br>排行</button>
+          <button class="candy lilac teacher-btn" id="teacherBtn">老師<br>後台</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-game" class="screen">
+      <div class="topbar">
+        <div class="pill" id="playerPill">5A 01</div>
+        <div class="pill" id="qPill">第 1 題</div>
+        <div class="timer-wrap">
+          <div class="pill timer" id="timer">⏱️ 03:00</div>
+          <span class="time-hit" id="timeHit" aria-hidden="true">−5秒</span>
+        </div>
+        <button class="candy ghost tiny no-print" id="backLoginBtn">主頁</button>
+      </div>
+      <div class="card play">
+        <div class="task-h">
+          <h2 id="taskTitle">剪剪拼拼</h2>
+          <p id="taskKind">平行四邊形</p>
+        </div>
+        <div class="hintbar" id="hintBar">1. 沿高剪下直角三角形　　2. 平移三角形，拼成長方形</div>
+        <div class="board" id="board">
+          <canvas id="scene"></canvas>
+          <div class="idea" id="ideaBanner"></div>
+        </div>
+        <div class="toast" id="feedToast"></div>
+        <div class="choice-row" id="phase1Acts">
+          <button class="candy lemon" id="btnCut">✂️ 沿高剪下</button>
+          <button class="candy lilac" id="btnWand" disabled>🪄 平移拼接</button>
+        </div>
+        <div class="opt-col" id="phase2Acts"></div>
+      </div>
+    </section>
+
+    <section id="screen-dash" class="screen">
+      <div class="dash-h">
+        <h1>老師後台</h1>
+        <div class="acts no-print">
+          <button class="candy lemon tiny" id="printBtn">列印</button>
+          <button class="candy sky tiny" id="refreshDashBtn">重新整理</button>
+          <button class="candy ghost tiny" id="dashBackBtn">返回</button>
+        </div>
+      </div>
+      <div class="card dash">
+        <div class="stats" id="analysisCards"></div>
+        <div class="tools">
+          <strong>全班紀錄 <small id="dashSource" class="dash-src"></small></strong>
+          <div class="tool-filters">
+            <select id="classFilter" aria-label="班別"></select>
+            <span class="dash-count" id="dashCount"></span>
+            <button type="button" class="tiny" id="clearFiltersBtn">清除篩選</button>
+          </div>
+        </div>
+        <div class="records" id="studentRecords"></div>
+      </div>
+    </section>
+
+    <section id="screen-rank" class="screen">
+      <div class="dash-h">
+        <h1>學生排行</h1>
+        <div class="acts no-print">
+          <button class="candy sky tiny" id="rankRefreshBtn">重新整理</button>
+          <button class="candy ghost tiny" id="rankBackBtn">返回</button>
+        </div>
+      </div>
+      <div class="card dash">
+        <p class="rank-note">✨ 數學之星 ✨</p>
+        <div class="records" id="rankRecords"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="report" id="reportModal">
+    <div class="report-card">
+      <div class="mascot">🏆</div>
+      <h2>成績診斷卡</h2>
+      <p id="reportScore"></p>
+      <div class="tip" id="reportTip"></div>
+      <button class="candy pink" id="reportBackBtn">完成</button>
+    </div>
+  </div>
+
+  <div id="dashFilterMenu" class="filter-menu"></div>
+
+  <div class="modal" id="pinModal">
+    <div class="modal-card">
+      <h3>老師後台</h3>
+      <input id="pinInput" type="password" maxlength="8" inputmode="numeric" autocomplete="off" />
+      <div class="choice-row">
+        <button class="candy ghost" id="pinCancel">取消</button>
+        <button class="candy lilac" id="pinOk">確認</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // 與 p5ma-ch1 / p5ma-ch3 共用同一張 Google Sheet（CHEUNG PY / poyee1102）
+      const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyGGhtjy7bKzw9M-divK5BZYL0mGcHJwcNoV_xv8VAUalMu_U9ptg8A8wIRQ8cpvQxv/exec";
+      const GAME_ID = "p5ma-ch4";
+      const CHAPTER = "p5ma-ch4";
+      const STORE_KEY = "p5ma-ch4-v1";
+      const TEACHER_PIN = "2246";
+      const GAME_SECS = 180;
+      const PENALTY_SECS = 5;
+      const GEO_ZOOM = 2.5;
+      const TITLE = "面積魔術師：平行四邊形";
+      const FILLS = [
+        ["#c4b5fd", "#f9a8d4"],
+        ["#93c5fd", "#67e8f9"],
+        ["#fcd34d", "#fdba74"],
+        ["#86efac", "#5eead4"],
+        ["#fda4af", "#f0abfc"]
+      ];
+      const DIAG_KINDS = [
+        { key: "slant", title: "誤用斜邊" },
+        { key: "unit", title: "單位漏平方" },
+        { key: "formula", title: "未用底×高" }
+      ];
+
+      const state = {
+        classId: "", studentId: "",
+        qIndex: 1, remain: GAME_SECS, ended: false, busy: false,
+        done: 0, qTimes: [], qStart: 0, sheetSent: false,
+        missSlant: 0, missUnit: 0, missFormula: 0,
+        q: null, cssW: 0, cssH: 0,
+        sparks: [], drag: null, canvasBound: false
+      };
+
+      let audioCtx = null, countId = null, sceneCtx = null, sparkLoop = 0;
+      const $ = (id) => document.getElementById(id);
+      const screens = { login: $("screen-login"), game: $("screen-game"), dash: $("screen-dash"), rank: $("screen-rank") };
+      const scene = $("scene");
+
+      function showScreen(name) {
+        Object.keys(screens).forEach((key) => screens[key].classList.toggle("active", key === name));
+        if (name !== "game") stopCountdown();
+        if (name === "game") requestAnimationFrame(() => { layoutCanvas(); draw(); });
+      }
+      function bounce(el) {
+        if (!el) return;
+        el.classList.remove("bounce");
+        void el.offsetWidth;
+        el.classList.add("bounce");
+      }
+      $("titleWave").innerHTML = [...TITLE].map((ch, i) => {
+        const span = `<span style="display:inline-block;animation:floaty 2.4s ${i * 0.08}s ease-in-out infinite">${ch}</span>`;
+        return ch === "：" ? span + "<br>" : span;
+      }).join("");
+
+      function loadStore() {
+        try {
+          const raw = localStorage.getItem(STORE_KEY);
+          if (!raw) return { students: {}, logs: [] };
+          const data = JSON.parse(raw);
+          return { students: data.students || {}, logs: Array.isArray(data.logs) ? data.logs : [] };
+        } catch (e) { return { students: {}, logs: [] }; }
+      }
+      function saveStore(data) { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+      function normalizeId(id) {
+        const raw = String(id || "").trim();
+        return /^\d+$/.test(raw) ? raw.padStart(2, "0") : raw;
+      }
+      function studentKey(c, s) { return `${c}__${normalizeId(s)}`; }
+      function nowText() {
+        const d = new Date();
+        const p = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+      }
+      function ensureStudent() {
+        const db = loadStore();
+        const key = studentKey(state.classId, state.studentId);
+        if (!db.students[key]) {
+          db.students[key] = { classId: state.classId, studentId: normalizeId(state.studentId) };
+          saveStore(db);
+        }
+        return key;
+      }
+      function diagnose() {
+        const counts = { slant: state.missSlant, unit: state.missUnit, formula: state.missFormula };
+        const hit = DIAG_KINDS.filter((k) => counts[k.key] > 0);
+        if (!hit.length) {
+          return { short: "零失誤", sheet: "零失誤", tip: "零失誤\n🌟 做得好啊" };
+        }
+        const sheet = hit.map((k) => `• ${k.title}（${counts[k.key]}次）`).join("\n");
+        const tip = sheet + "\n💪 再接再厲吧";
+        return { short: sheet, sheet, tip };
+      }
+      function sheetConfigured() {
+        return /^https:\/\/script\.google\.com\/macros\/s\/(?!YOUR_SCRIPT_ID\b)[^/]+\/exec\/?$/.test(GOOGLE_SHEET_URL);
+      }
+      function sendToGoogleSheet(d) {
+        if (state.sheetSent || !sheetConfigured()) return;
+        state.sheetSent = true;
+        const avg = state.done ? Math.round(state.qTimes.reduce((x, y) => x + y, 0) / state.done) : 0;
+        const payload = {
+          game: GAME_ID,
+          chapter: CHAPTER,
+          student: `${state.classId} (${normalizeId(state.studentId)})`,
+          score: state.done,
+          avgTime: `${avg}秒`,
+          diagnostic: d.sheet
+        };
+        try {
+          fetch(GOOGLE_SHEET_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+          }).catch(function () {});
+        } catch (err) {}
+      }
+
+      let sheetLogsCache = null, dashSeq = 0, dashAllLogs = [], rankSeq = 0;
+      let dashClass = "ALL";
+      let dashSort = { col: "student", dir: "asc" };
+      let dashFilters = {}, dashMenuCol = "";
+      const DASH_COLS = [
+        { key: "student", label: "班別學號", numeric: false },
+        { key: "score", label: "答對題數", numeric: true },
+        { key: "avg", label: "平均用時(秒)", numeric: true },
+        { key: "diagnosis", label: "診斷", numeric: false },
+        { key: "time", label: "時間", numeric: false }
+      ];
+      function parseSheetStudent(s) {
+        const m = String(s || "").match(/^(.+?)\s*\(([^)]+)\)/);
+        if (m) return { classId: m[1].trim(), studentId: normalizeId(m[2].trim()) };
+        return { classId: "", studentId: String(s || "").trim() };
+      }
+      function parseAvgSec(s) {
+        const m = String(s || "").match(/(\d+)/);
+        return m ? Number(m[1]) : 0;
+      }
+      function rowsToLogs(rows) {
+        return (rows || []).map((r) => {
+          const who = parseSheetStudent(r.student);
+          const diagnostic = String(r.diagnostic || "");
+          return {
+            classId: who.classId, studentId: who.studentId,
+            done: Number(r.score) || 0, avgSec: parseAvgSec(r.avgTime),
+            diagnosis: diagnostic,
+            slantErr: /斜邊/.test(diagnostic) ? 1 : 0,
+            unitErr: /單位|平方/.test(diagnostic) ? 1 : 0,
+            time: r.time || "", game: r.game || r.chapter || ""
+          };
+        }).filter((e) => e.studentId || e.classId);
+      }
+      function jsonpSheet(url) {
+        return new Promise((resolve, reject) => {
+          const cb = "p5ch4Dash" + Date.now();
+          const s = document.createElement("script");
+          const timer = setTimeout(() => { cleanup(); reject(new Error("timeout")); }, 15000);
+          function cleanup() {
+            clearTimeout(timer);
+            try { delete window[cb]; } catch (err) { window[cb] = undefined; }
+            if (s.parentNode) s.parentNode.removeChild(s);
+          }
+          window[cb] = function (data) { cleanup(); resolve(data); };
+          s.onerror = function () { cleanup(); reject(new Error("script")); };
+          s.src = url + (url.indexOf("?") >= 0 ? "&" : "?") + "callback=" + cb;
+          document.body.appendChild(s);
+        });
+      }
+      async function loadSheetLogs(force) {
+        if (sheetLogsCache && !force) return sheetLogsCache;
+        if (!sheetConfigured()) throw new Error("no-url");
+        const url = GOOGLE_SHEET_URL + "?game=" + encodeURIComponent(GAME_ID);
+        let data = null;
+        try {
+          const res = await fetch(url, { method: "GET" });
+          if (!res.ok) throw new Error("http");
+          data = await res.json();
+        } catch (err) { data = await jsonpSheet(url); }
+        if (!data || !data.ok) throw new Error("bad");
+        sheetLogsCache = rowsToLogs(data.rows);
+        return sheetLogsCache;
+      }
+      function saveSession() {
+        const db = loadStore();
+        ensureStudent();
+        const avg = state.done ? Math.round(state.qTimes.reduce((a, b) => a + b, 0) / state.done) : 0;
+        const d = diagnose();
+        db.logs.push({
+          classId: state.classId, studentId: normalizeId(state.studentId),
+          done: state.done, avgSec: avg, diagnosis: d.short,
+          slantErr: state.missSlant, unitErr: state.missUnit, time: nowText()
+        });
+        saveStore(db);
+        return d;
+      }
+
+      function unlockAudio() {
+        if (!audioCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        }
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      }
+      function tone(freq, dur, type, gain) {
+        if (!audioCtx) return;
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = type || "sine"; o.frequency.value = freq; g.gain.value = gain || 0.05;
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start();
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        o.stop(audioCtx.currentTime + dur);
+      }
+      function sfx(kind) {
+        unlockAudio();
+        if (kind === "ok") {
+          tone(523, 0.1, "triangle");
+          setTimeout(() => tone(659, 0.1, "triangle"), 80);
+          setTimeout(() => tone(784, 0.16, "triangle"), 160);
+        } else if (kind === "snap") tone(720, 0.08, "triangle", 0.03);
+        else if (kind === "magic") {
+          tone(392, 0.08, "sine", 0.04);
+          setTimeout(() => tone(523, 0.1, "sine", 0.04), 90);
+          setTimeout(() => tone(784, 0.14, "triangle", 0.05), 180);
+        } else if (kind === "bad") tone(180, 0.2, "sawtooth", 0.04);
+        else if (kind === "win") [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.14, "triangle"), i * 100));
+      }
+
+      function renderTimer() {
+        const s = Math.max(0, state.remain);
+        $("timer").textContent = `⏱️ ${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+        $("timer").classList.toggle("low", s <= 15);
+      }
+      function applyPenalty() {
+        if (state.ended) return;
+        state.remain = Math.max(0, state.remain - PENALTY_SECS);
+        renderTimer();
+        const timer = $("timer"), hit = $("timeHit");
+        if (timer) {
+          timer.classList.remove("hit");
+          void timer.offsetWidth;
+          timer.classList.add("hit");
+          setTimeout(() => timer.classList.remove("hit"), 420);
+        }
+        if (hit) {
+          hit.classList.remove("show");
+          void hit.offsetWidth;
+          hit.classList.add("show");
+          setTimeout(() => hit.classList.remove("show"), 720);
+        }
+        if (state.remain <= 0) endSession();
+      }
+      function stopCountdown() { clearInterval(countId); countId = null; }
+      function startCountdown() {
+        stopCountdown();
+        state.remain = GAME_SECS; state.ended = false; renderTimer();
+        countId = setInterval(() => {
+          if (state.ended) return;
+          state.remain -= 1; renderTimer();
+          if (state.remain <= 0) endSession();
+        }, 1000);
+      }
+      function endSession() {
+        if (state.ended) return;
+        state.ended = true; state.remain = 0; state.busy = false; renderTimer(); stopCountdown();
+        const d = saveSession();
+        sendToGoogleSheet(d);
+        $("reportScore").textContent = `🎉 3 分鐘內答對 ${state.done} 題平行四邊形面積。`;
+        $("reportTip").textContent = d.tip;
+        $("reportModal").classList.add("show");
+        burstConfetti(180); sfx("win");
+      }
+
+      function rand(a, b) { return a + Math.random() * (b - a); }
+      function rint(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+      function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+      function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+      }
+      function add(a, b) { return { x: a.x + b.x, y: a.y + b.y }; }
+      function sub(a, b) { return { x: a.x - b.x, y: a.y - b.y }; }
+      function mul(a, s) { return { x: a.x * s, y: a.y * s }; }
+      function dot(a, b) { return a.x * b.x + a.y * b.y; }
+      function cross(a, b) { return a.x * b.y - a.y * b.x; }
+      function len(a) { return Math.hypot(a.x, a.y); }
+      function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+      function norm(a) { const L = len(a) || 1; return { x: a.x / L, y: a.y / L }; }
+      function lerp(a, b, t) { return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }; }
+      function rot(a, ang) {
+        const c = Math.cos(ang), s = Math.sin(ang);
+        return { x: a.x * c - a.y * s, y: a.x * s + a.y * c };
+      }
+      function centroid(pts) {
+        let x = 0, y = 0;
+        pts.forEach((p) => { x += p.x; y += p.y; });
+        return { x: x / pts.length, y: y / pts.length };
+      }
+      function inTri(p, a, b, c) {
+        const x = cross(sub(b, a), sub(p, a));
+        const y = cross(sub(c, b), sub(p, b));
+        const z = cross(sub(a, c), sub(p, c));
+        return (x >= 0 && y >= 0 && z >= 0) || (x <= 0 && y <= 0 && z <= 0);
+      }
+      function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+      function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+      function setToast(ok, text) {
+        const el = $("feedToast");
+        el.className = "toast show " + (ok ? "good" : "bad");
+        el.textContent = text;
+      }
+      function clearToast() { $("feedToast").className = "toast"; $("feedToast").textContent = ""; }
+
+      function genLocal() {
+        if (state.qIndex === 1) {
+          return { base: 8, h: 5, sk: 3, slant: 6, unit: "cm", area: 40 };
+        }
+        for (let n = 0; n < 90; n++) {
+          const base = rint(6, 12);
+          const h = rint(4, 9);
+          if (h === base) continue;
+          const skAbs = rint(2, Math.max(2, Math.min(5, base - 3)));
+          const sk = (Math.random() < 0.5 ? 1 : -1) * skAbs;
+          const slant = Math.max(3, Math.round(Math.hypot(skAbs, h)));
+          if (new Set([base, h, slant]).size < 3) continue;
+          if (base * slant === base * h || h * slant === base * h) continue;
+          const unit = Math.random() < 0.22 ? "m" : "cm";
+          return { base, h, sk, slant, unit, area: base * h };
+        }
+        return { base: 8, h: 5, sk: 3, slant: 6, unit: "cm", area: 40 };
+      }
+
+      function localGeom(L) {
+        const A = { x: 0, y: 0 }, B = { x: L.base, y: 0 };
+        const C = { x: L.base + L.sk, y: L.h }, D = { x: L.sk, y: L.h };
+        const leanRight = L.sk >= 0;
+        const F = leanRight ? { x: L.sk, y: 0 } : { x: L.base + L.sk, y: 0 };
+        const Gpt = leanRight ? { x: L.base + L.sk, y: 0 } : { x: L.sk, y: 0 };
+        return {
+          A, B, C, D, F, G: Gpt, leanRight,
+          cutTri: leanRight ? [A, F, D] : [F, B, C],
+          remain: leanRight ? [F, B, C, D] : [A, F, C, D],
+          rect: leanRight ? [F, Gpt, C, D] : [Gpt, F, C, D],
+          slideLocal: leanRight ? { x: L.base, y: 0 } : { x: -L.base, y: 0 },
+          heightTop: leanRight ? D : C,
+          heightBot: F
+        };
+      }
+      function bboxFlip(pts) {
+        let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+        pts.forEach((p) => {
+          const x = p.x, y = -p.y;
+          minx = Math.min(minx, x); miny = Math.min(miny, y);
+          maxx = Math.max(maxx, x); maxy = Math.max(maxy, y);
+        });
+        return { minx, miny, maxx, maxy, bw: Math.max(1, maxx - minx), bh: Math.max(1, maxy - miny) };
+      }
+      function makeXf(box, b, scale) {
+        const ox = box.x + box.w / 2 - (b.minx + b.maxx) / 2 * scale;
+        const oy = box.y + box.h / 2 - (b.miny + b.maxy) / 2 * scale;
+        const xf = (p) => ({ x: ox + p.x * scale, y: oy - p.y * scale });
+        const xfV = (v) => ({ x: v.x * scale, y: -v.y * scale });
+        return { xf, xfV };
+      }
+      function applyMapped(q, g, xf, xfV) {
+        q.A = xf(g.A); q.B = xf(g.B); q.C = xf(g.C); q.D = xf(g.D);
+        q.F = xf(g.F); q.G = xf(g.G);
+        q.verts = [q.A, q.B, q.C, q.D];
+        q.cutTri = g.cutTri.map(xf);
+        q.remain = g.remain.map(xf);
+        q.rect = g.rect.map(xf);
+        q.heightTop = xf(g.heightTop);
+        q.heightBot = xf(g.heightBot);
+        q.slideVec = xfV(g.slideLocal);
+        q.sepDir = norm(g.leanRight ? mul(xfV({ x: 1, y: 0 }), -1) : xfV({ x: 1, y: 0 }));
+        q.leanRight = g.leanRight;
+      }
+      function pillHalf(text) {
+        const n = [...String(text)].length;
+        return { hw: Math.max(24, 12 + n * 9), hh: 18 };
+      }
+      function edgeOut(a, b, shapePts) {
+        const mid = lerp(a, b, 0.5);
+        const n = norm({ x: b.y - a.y, y: a.x - b.x });
+        const c = centroid(shapePts);
+        return dot(n, sub(c, mid)) > 0 ? mul(n, -1) : n;
+      }
+      function posOnEdge(a, b, t, shapePts, dist) {
+        return add(lerp(a, b, t), mul(edgeOut(a, b, shapePts), dist));
+      }
+      function resolvePills(items, box) {
+        if (!items || !items.length) return;
+        const cap = 32, gap = 10;
+        const bx = box || { x: 0, y: 0, w: state.cssW || 400, h: state.cssH || 400 };
+        function clampItem(it) {
+          const { hw, hh } = pillHalf(it.text);
+          it.pos.x = Math.max(bx.x + hw + 4, Math.min(bx.x + bx.w - hw - 4, it.pos.x));
+          it.pos.y = Math.max(bx.y + cap + hh, Math.min(bx.y + bx.h - hh - 6, it.pos.y));
+        }
+        items.forEach(clampItem);
+        for (let k = 0; k < 18; k++) {
+          let hit = false;
+          for (let i = 0; i < items.length; i++) {
+            for (let j = i + 1; j < items.length; j++) {
+              const a = items[i], b = items[j];
+              const ha = pillHalf(a.text), hb = pillHalf(b.text);
+              const needX = ha.hw + hb.hw + gap;
+              const needY = ha.hh + hb.hh + gap;
+              const dx = b.pos.x - a.pos.x, dy = b.pos.y - a.pos.y;
+              if (Math.abs(dx) >= needX || Math.abs(dy) >= needY) continue;
+              hit = true;
+              if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
+                b.pos.y += 22;
+                continue;
+              }
+              if (needX - Math.abs(dx) <= needY - Math.abs(dy)) {
+                const s = ((dx < 0 ? -1 : 1) * (needX - Math.abs(dx))) / 2;
+                a.pos.x -= s; b.pos.x += s;
+              } else {
+                const s = ((dy < 0 ? -1 : 1) * (needY - Math.abs(dy))) / 2;
+                a.pos.y -= s; b.pos.y += s;
+              }
+            }
+          }
+          items.forEach(clampItem);
+          if (!hit) break;
+        }
+      }
+      function placeLabels(q, W, H) {
+        const verts = q.verts;
+        const baseMid = lerp(q.A, q.B, 0.5);
+        const hMid = lerp(q.heightBot, q.heightTop, 0.55);
+        const toIn = norm(sub(centroid(verts), hMid));
+        const aD = lerp(q.A, q.D, 0.5), bC = lerp(q.B, q.C, 0.5);
+        const useAD = dist(aD, hMid) >= dist(bC, hMid);
+        const sA = useAD ? q.A : q.B, sB = useAD ? q.D : q.C;
+        q.labels = [
+          { kind: "base", text: `底 ${q.baseCm}${q.unit}`, color: "#ee4d93", pos: { x: baseMid.x, y: baseMid.y + 32 } },
+          { kind: "height", text: `高 ${q.heightCm}${q.unit}`, color: "#1a8f7c", pos: add(hMid, mul(toIn, 34)) },
+          { kind: "slant", text: `斜邊 ${q.slantCm}${q.unit}`, color: "#d97706", pos: posOnEdge(sA, sB, 0.5, verts, 34) }
+        ];
+        resolvePills(q.labels, { x: 0, y: 0, w: W, h: H });
+      }
+      function fitQuestion(q, W, H) {
+        const L = q.local;
+        const g = localGeom(L);
+        const allLocal = [g.A, g.B, g.C, g.D, g.F, g.G];
+        const b = bboxFlip(allLocal);
+        q.baseCm = L.base; q.heightCm = L.h; q.slantCm = L.slant;
+        q.unit = L.unit; q.area = L.area;
+        q.fill = q.fill || pick(FILLS);
+        q.ang = 0;
+
+        if (q.phase === 2) {
+          const pad = 62;
+          const scale = Math.min((W - pad * 2) / b.bw, (H - pad * 2) / b.bh);
+          const { xf, xfV } = makeXf({ x: 0, y: 0, w: W, h: H }, b, scale);
+          applyMapped(q, g, xf, xfV);
+          q.leftVerts = null;
+          q.pxPerUnit = scale;
+          q.origin = xf({ x: 0, y: 0 });
+          q.leftOrigin = q.rightOrigin = null;
+          q.leftBox = q.rightBox = null;
+          placeLabels(q, W, H);
+        } else {
+          const cap = 26;
+          const gap = 14;
+          const pad = 28;
+          const leftBox = { x: 4, y: cap, w: W / 2 - gap / 2 - 4, h: H - cap - 8 };
+          const rightBox = { x: W / 2 + gap / 2, y: cap, w: W / 2 - gap / 2 - 4, h: H - cap - 8 };
+          const scale = Math.min(
+            (leftBox.w - pad * 2) / b.bw, (leftBox.h - pad * 2) / b.bh,
+            (rightBox.w - pad * 2) / b.bw, (rightBox.h - pad * 2) / b.bh
+          );
+          const left = makeXf(leftBox, b, scale);
+          const right = makeXf(rightBox, b, scale);
+          q.leftVerts = [g.A, g.B, g.C, g.D].map(left.xf);
+          q.leftA = left.xf(g.A); q.leftB = left.xf(g.B); q.leftC = left.xf(g.C); q.leftD = left.xf(g.D);
+          q.leftHeightBot = left.xf(g.heightBot);
+          q.leftHeightTop = left.xf(g.heightTop);
+          q.leftBox = leftBox; q.rightBox = rightBox;
+          applyMapped(q, g, right.xf, right.xfV);
+          q.pxPerUnit = scale;
+          q.origin = null;
+          q.leftOrigin = left.xf({ x: 0, y: 0 });
+          q.rightOrigin = right.xf({ x: 0, y: 0 });
+          placeDiscLabels(q);
+          placeRectLabs(q);
+        }
+        const sq = q.unit + "²";
+        const traps = [
+          { text: `${q.baseCm} × ${q.heightCm} = ${q.area} ${sq}`, ok: true, err: null },
+          { text: `${q.baseCm} × ${q.slantCm} = ${q.baseCm * q.slantCm} ${sq}`, ok: false, err: "slant" },
+          Math.random() < 0.5
+            ? { text: `${q.heightCm} × ${q.slantCm} = ${q.heightCm * q.slantCm} ${sq}`, ok: false, err: "slant" }
+            : { text: `${q.baseCm} × ${q.heightCm} = ${q.area} ${q.unit}`, ok: false, err: "unit" }
+        ];
+        if (!q.options) q.options = shuffle(traps);
+      }
+      function placeDiscLabels(q) {
+        if (!q.leftA || !q.leftB) return;
+        const verts = q.leftVerts;
+        const baseMid = lerp(q.leftA, q.leftB, 0.5);
+        const hMid = lerp(q.leftHeightBot, q.leftHeightTop, 0.55);
+        const toIn = norm(sub(centroid(verts), hMid));
+        const aD = lerp(q.leftA, q.leftD, 0.5), bC = lerp(q.leftB, q.leftC, 0.5);
+        const useAD = dist(aD, hMid) >= dist(bC, hMid);
+        const sA = useAD ? q.leftA : q.leftB, sB = useAD ? q.leftD : q.leftC;
+        q.discLabels = [
+          { kind: "base", text: "底", color: "#ee4d93", pos: { x: baseMid.x, y: baseMid.y + 28 } },
+          { kind: "height", text: "高", color: "#1a8f7c", pos: add(hMid, mul(toIn, 30)) },
+          { kind: "slant", text: "斜邊", color: "#d97706", pos: posOnEdge(sA, sB, 0.52, verts, 30) }
+        ];
+        resolvePills(q.discLabels, q.leftBox);
+      }
+      function placeRectLabs(q) {
+        if (!q.rect) return;
+        const len = rectLenEdge(q), wid = rectWidEdge(q);
+        const labs = [
+          { key: "len", text: "長", pos: posOnEdge(len[0], len[1], 0.36, q.rect, 28) },
+          { key: "wid", text: "闊", pos: posOnEdge(wid[0], wid[1], 0.6, q.rect, 28) }
+        ];
+        resolvePills(labs, q.rightBox);
+        q.rectLenLab = labs[0].pos;
+        q.rectWidLab = labs[1].pos;
+      }
+      const DISC_STEPS = [
+        {
+          kind: "choice",
+          flash: "areas",
+          hint: "剪拼後，兩個圖形的面積相等嗎？",
+          options: [
+            { text: "相等", ok: true },
+            { text: "左邊較大", ok: false, err: "formula" },
+            { text: "右邊較大", ok: false, err: "formula" }
+          ],
+          bad: "剪拼只是移動，面積不變。"
+        },
+        {
+          kind: "tap", expect: "base", glow: "長", flash: "長",
+          hint: "長方形的長＝平行四邊形的哪個部份？",
+          badBase: "這是底。",
+          badHeight: "這是高。請再對照長和底。",
+          badSlant: "斜邊不是長。請再對照。"
+        },
+        {
+          kind: "tap", expect: "height", glow: "闊", flash: "闊",
+          hint: "長方形的闊＝平行四邊形的哪個部份？",
+          badBase: "這是底。請再對照闊和高。",
+          badHeight: "這是高。",
+          badSlant: "斜邊不是闊。請再對照。"
+        },
+        {
+          kind: "choice",
+          flash: "formula",
+          hint: "長方形面積＝長×闊。平行四邊形面積＝？",
+          options: [
+            { text: "底×高", ok: true },
+            { text: "底×斜邊", ok: false, err: "slant" },
+            { text: "高×斜邊", ok: false, err: "slant" }
+          ],
+          bad: "不要用斜邊。"
+        }
+      ];
+
+      function layoutCanvas() {
+        const c = scene;
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const w = Math.max(40, c.clientWidth);
+        const h = Math.max(40, c.clientHeight);
+        c.width = Math.round(w * dpr);
+        c.height = Math.round(h * dpr);
+        sceneCtx = c.getContext("2d");
+        sceneCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        state.cssW = w; state.cssH = h;
+        if (state.q && state.q.local) fitQuestion(state.q, w, h);
+      }
+
+      function drawUnitGrid(ctx, origin, scale, box) {
+        if (!origin || !scale || scale < 4 || !box) return;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(box.x, box.y, box.w, box.h);
+        ctx.clip();
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(box.x, box.y, box.w, box.h);
+        ctx.strokeStyle = "rgba(110, 130, 180, 0.42)";
+        ctx.lineWidth = 1;
+        const s = scale;
+        const x0 = origin.x, y0 = origin.y;
+        const startX = x0 - Math.ceil((x0 - box.x) / s) * s;
+        const startY = y0 - Math.ceil((y0 - box.y) / s) * s;
+        for (let x = startX; x <= box.x + box.w + 0.5; x += s) {
+          ctx.beginPath(); ctx.moveTo(Math.round(x) + 0.5, box.y); ctx.lineTo(Math.round(x) + 0.5, box.y + box.h); ctx.stroke();
+        }
+        for (let y = startY; y <= box.y + box.h + 0.5; y += s) {
+          ctx.beginPath(); ctx.moveTo(box.x, Math.round(y) + 0.5); ctx.lineTo(box.x + box.w, Math.round(y) + 0.5); ctx.stroke();
+        }
+        ctx.restore();
+      }
+      function drawGrid(ctx, w, h, q) {
+        ctx.clearRect(0, 0, w, h);
+        if (q && q.pxPerUnit) {
+          if (q.phase !== 2 && q.leftBox && q.rightBox) {
+            drawUnitGrid(ctx, q.leftOrigin, q.pxPerUnit, q.leftBox);
+            drawUnitGrid(ctx, q.rightOrigin, q.pxPerUnit, q.rightBox);
+            return;
+          }
+          if (q.origin) {
+            drawUnitGrid(ctx, q.origin, q.pxPerUnit, { x: 0, y: 0, w: w, h: h });
+            return;
+          }
+        }
+        ctx.save();
+        ctx.strokeStyle = "rgba(155, 122, 240, 0.10)";
+        ctx.lineWidth = 1;
+        const step = 22;
+        for (let x = 16; x < w; x += step) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        }
+        for (let y = 16; y < h; y += step) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
+        ctx.restore();
+      }
+      function polyPath(ctx, pts) {
+        ctx.beginPath();
+        pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+        ctx.closePath();
+      }
+      function fillPoly(ctx, pts, c0, c1) {
+        if (!pts.length) return;
+        const g = ctx.createLinearGradient(pts[0].x, pts[0].y, pts[2] ? pts[2].x : pts[0].x, pts[2] ? pts[2].y : pts[0].y);
+        g.addColorStop(0, c0); g.addColorStop(1, c1);
+        ctx.fillStyle = g;
+        polyPath(ctx, pts); ctx.fill();
+      }
+      function strokePoly(ctx, pts, color, width) {
+        ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = "round"; ctx.lineCap = "round";
+        polyPath(ctx, pts); ctx.stroke();
+      }
+      function drawShadow(ctx, pts) {
+        ctx.save();
+        ctx.fillStyle = "rgba(59, 42, 85, 0.14)";
+        ctx.translate(5, 7);
+        polyPath(ctx, pts); ctx.fill();
+        ctx.restore();
+      }
+      function drawRightMark(ctx, foot, along, up) {
+        const s = 13 * (GEO_ZOOM / 2);
+        const u = mul(norm(along), s);
+        const v = mul(norm(up), s);
+        ctx.save();
+        ctx.strokeStyle = "#3b2a55"; ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(foot.x + u.x, foot.y + u.y);
+        ctx.lineTo(foot.x + u.x + v.x, foot.y + u.y + v.y);
+        ctx.lineTo(foot.x + v.x, foot.y + v.y);
+        ctx.stroke();
+        ctx.restore();
+      }
+      function drawHeightAt(ctx, bot, top, baseA, baseB, glow) {
+        ctx.save();
+        if (glow) {
+          ctx.shadowColor = "rgba(34, 211, 238, 0.85)";
+          ctx.shadowBlur = 12;
+        }
+        ctx.setLineDash([10, 7]);
+        ctx.strokeStyle = "#06b6d4";
+        ctx.lineWidth = 3.2 * (GEO_ZOOM / 2);
+        ctx.beginPath(); ctx.moveTo(bot.x, bot.y); ctx.lineTo(top.x, top.y); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#06b6d4";
+        ctx.beginPath(); ctx.arc(bot.x, bot.y, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(top.x, top.y, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        drawRightMark(ctx, bot, sub(baseB, baseA), sub(top, bot));
+      }
+      function drawBaseAt(ctx, A, B) {
+        ctx.save();
+        ctx.strokeStyle = "#ee4d93";
+        ctx.lineWidth = 5.2 * (GEO_ZOOM / 2);
+        ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+        ctx.restore();
+      }
+      function drawCaption(ctx, text, box) {
+        ctx.save();
+        ctx.font = '900 18px "Noto Sans TC", sans-serif';
+        ctx.fillStyle = "#6a4d86";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText(text, box.x + box.w / 2, 6);
+        ctx.restore();
+      }
+      function pill(ctx, text, x, y, color, gone) {
+        ctx.save();
+        ctx.font = `900 ${16 * (GEO_ZOOM / 2) + 4}px "Noto Sans TC", sans-serif`;
+        const tw = ctx.measureText(text).width;
+        const w = tw + 22, h = 32;
+        const rx = x - w / 2, ry = y - h / 2, r = 14;
+        ctx.shadowColor = "rgba(59,42,85,0.18)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+        ctx.fillStyle = gone ? "#f3f4f6" : "#fff";
+        ctx.beginPath();
+        ctx.moveTo(rx + r, ry); ctx.arcTo(rx + w, ry, rx + w, ry + h, r);
+        ctx.arcTo(rx + w, ry + h, rx, ry + h, r); ctx.arcTo(rx, ry + h, rx, ry, r);
+        ctx.arcTo(rx, ry, rx + w, ry, r); ctx.closePath(); ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.strokeStyle = gone ? "#9ca3af" : color; ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = gone ? "#9ca3af" : color;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(text, x, y + 1);
+        if (gone) {
+          ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 3.5;
+          ctx.beginPath(); ctx.moveTo(rx + 8, ry + 8); ctx.lineTo(rx + w - 8, ry + h - 8); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(rx + w - 8, ry + 8); ctx.lineTo(rx + 8, ry + h - 8); ctx.stroke();
+        }
+        ctx.restore();
+        return { x, y, w, h };
+      }
+      function movingTri(q) {
+        const sep = q.cut ? 14 : 14 * (q.cutT || 0);
+        const start = q.cutTri.map((p) => add(p, mul(q.sepDir, sep)));
+        const t = q.triOffset || 0;
+        return start.map((p) => add(p, mul(q.slideVec, t)));
+      }
+      function drawSparks(ctx) {
+        state.sparks = state.sparks.filter((s) => s.life > 0);
+        state.sparks.forEach((s) => {
+          s.x += s.vx; s.y += s.vy; s.vy += 0.08; s.life -= 0.03;
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, s.life);
+          ctx.fillStyle = s.c;
+          ctx.translate(s.x, s.y); ctx.rotate(s.life * 6);
+          ctx.beginPath();
+          ctx.moveTo(0, -s.r); ctx.lineTo(s.r * 0.35, 0); ctx.lineTo(0, s.r); ctx.lineTo(-s.r * 0.35, 0);
+          ctx.closePath(); ctx.fill();
+          ctx.restore();
+        });
+      }
+      function spawnSparks(pt, n) {
+        const colors = ["#ffe066", "#ff7eb6", "#5cc8ff", "#c9b6ff", "#7eecc8"];
+        for (let i = 0; i < n; i++) {
+          state.sparks.push({
+            x: pt.x, y: pt.y, r: 4 + Math.random() * 5,
+            vx: rand(-2.2, 2.2), vy: rand(-3.2, 0.4),
+            life: 1, c: colors[i % colors.length]
+          });
+        }
+      }
+      function drawScissors(ctx, q) {
+        const t = q.cutT || 0;
+        if (t <= 0 || q.cut) return;
+        const p = lerp(q.heightTop, q.heightBot, t);
+        ctx.save();
+        ctx.font = `${28 * (GEO_ZOOM / 2)}px sans-serif`;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("✂️", p.x, p.y);
+        ctx.restore();
+      }
+      function flashAmt() {
+        return 0.28 + 0.72 * (0.5 + 0.5 * Math.sin(performance.now() / 200));
+      }
+      function rectLenEdge(q) {
+        return [q.rect[0], q.rect[1]];
+      }
+      function rectWidEdge(q) {
+        return q.leanRight ? [q.rect[1], q.rect[2]] : [q.rect[3], q.rect[0]];
+      }
+      function edgeLabelPos(a, b, shapePts, dist) {
+        const mid = lerp(a, b, 0.5);
+        const n = norm({ x: b.y - a.y, y: a.x - b.x });
+        const c = centroid(shapePts);
+        const out = dot(n, sub(c, mid)) > 0 ? mul(n, -1) : n;
+        return add(mid, mul(out, dist || 26));
+      }
+      function drawFlashSeg(ctx, a, b, color) {
+        if (!a || !b) return;
+        ctx.save();
+        ctx.lineCap = "round";
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = flashAmt();
+        ctx.lineWidth = 12;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 18;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        ctx.restore();
+      }
+      function drawFlashFill(ctx, pts, color) {
+        if (!pts || pts.length < 3) return;
+        const t = 0.5 + 0.5 * Math.sin(performance.now() / 240);
+        ctx.save();
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8 + 26 * t;
+        ctx.globalAlpha = 0.42 + 0.5 * t;
+        ctx.fillStyle = color;
+        polyPath(ctx, pts); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 0.18 + 0.4 * t;
+        ctx.fillStyle = "#fff";
+        polyPath(ctx, pts); ctx.fill();
+        ctx.restore();
+      }
+      function drawDiscoverFlash(ctx, q) {
+        if (!q || !q.discover || !q.rect) return;
+        const step = DISC_STEPS[q.discStep];
+        if (!step || !step.flash) return;
+        const len = rectLenEdge(q), wid = rectWidEdge(q);
+        if (step.flash === "長" || step.flash === "formula") {
+          drawFlashSeg(ctx, len[0], len[1], "#ee4d93");
+        }
+        if (step.flash === "闊" || step.flash === "formula") {
+          drawFlashSeg(ctx, wid[0], wid[1], "#1a8f7c");
+        }
+        if (step.flash === "areas") {
+          drawFlashFill(ctx, q.leftVerts, "#ff5ad5");
+          drawFlashFill(ctx, q.rect, "#ffd000");
+        }
+      }
+      function drawRectLabels(ctx, q) {
+        const step = q.discover ? DISC_STEPS[q.discStep] : null;
+        const glow = step && step.glow;
+        const flash = step && step.flash;
+        const pulse = flashAmt();
+        if (!q.rectLenLab || !q.rectWidLab) placeRectLabs(q);
+        const lp = q.rectLenLab, wp = q.rectWidLab;
+        ctx.save();
+        if (glow === "長" || flash === "長" || flash === "formula") ctx.globalAlpha = 0.4 + 0.6 * pulse;
+        pill(ctx, "長", lp.x, lp.y, (glow === "長" || flash === "長" || flash === "formula") ? "#ff2d7b" : "#ee4d93");
+        ctx.restore();
+        ctx.save();
+        if (glow === "闊" || flash === "闊" || flash === "formula") ctx.globalAlpha = 0.4 + 0.6 * pulse;
+        pill(ctx, "闊", wp.x, wp.y, (glow === "闊" || flash === "闊" || flash === "formula") ? "#00c4a0" : "#1a8f7c");
+        ctx.restore();
+      }
+
+      function drawOriginal(ctx, q, strokeW) {
+        if (!q.leftVerts) return;
+        drawShadow(ctx, q.leftVerts);
+        fillPoly(ctx, q.leftVerts, q.fill[0], q.fill[1]);
+        strokePoly(ctx, q.leftVerts, "#3b2a55", strokeW);
+        drawBaseAt(ctx, q.leftA, q.leftB);
+        drawHeightAt(ctx, q.leftHeightBot, q.leftHeightTop, q.leftA, q.leftB, false);
+        if (q.discover && q.discLabels) {
+          q.discLabels.forEach((lab) => {
+            pill(ctx, lab.text, lab.pos.x, lab.pos.y, lab.color, false);
+          });
+        }
+        if (q.leftBox) drawCaption(ctx, "剪拼前", q.leftBox);
+      }
+      function drawWorking(ctx, q, strokeW) {
+        const cutting = q.cut || (q.cutT || 0) > 0;
+        const done = q.slid || (q.triOffset || 0) >= 0.97;
+        if (cutting && done) {
+          drawShadow(ctx, q.rect);
+          fillPoly(ctx, q.rect, q.fill[0], q.fill[1]);
+          ctx.save();
+          ctx.shadowColor = "rgba(255, 224, 102, 0.75)";
+          ctx.shadowBlur = 18;
+          strokePoly(ctx, q.rect, "#e4b82a", 6.2);
+          ctx.restore();
+          drawRectLabels(ctx, q);
+        } else if (cutting) {
+          const tri = movingTri(q);
+          drawShadow(ctx, q.remain);
+          drawShadow(ctx, tri);
+          fillPoly(ctx, q.remain, q.fill[0], q.fill[1]);
+          fillPoly(ctx, tri, q.fill[1], q.fill[0]);
+          strokePoly(ctx, q.remain, "#3b2a55", strokeW);
+          strokePoly(ctx, tri, "#3b2a55", strokeW);
+          drawBaseAt(ctx, q.A, q.B);
+          drawHeightAt(ctx, q.heightBot, q.heightTop, q.A, q.B, true);
+          drawScissors(ctx, q);
+        } else {
+          drawShadow(ctx, q.verts);
+          fillPoly(ctx, q.verts, q.fill[0], q.fill[1]);
+          strokePoly(ctx, q.verts, "#3b2a55", strokeW);
+          drawBaseAt(ctx, q.A, q.B);
+          drawHeightAt(ctx, q.heightBot, q.heightTop, q.A, q.B, true);
+          drawScissors(ctx, q);
+        }
+        if (q.rightBox) drawCaption(ctx, "剪拼後", q.rightBox);
+      }
+      function draw() {
+        const ctx = sceneCtx, q = state.q, w = state.cssW, h = state.cssH;
+        if (!ctx || !w) return;
+        drawGrid(ctx, w, h, q);
+        if (!q) return;
+        const strokeW = 5.4;
+
+        if (q.phase === 1) {
+          ctx.save();
+          ctx.strokeStyle = "rgba(155, 122, 240, 0.35)";
+          ctx.setLineDash([7, 7]);
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(w / 2, 10);
+          ctx.lineTo(w / 2, h - 10);
+          ctx.stroke();
+          ctx.restore();
+          drawOriginal(ctx, q, strokeW);
+          drawWorking(ctx, q, strokeW);
+          drawDiscoverFlash(ctx, q);
+        } else {
+          drawShadow(ctx, q.verts);
+          fillPoly(ctx, q.verts, q.fill[0], q.fill[1]);
+          strokePoly(ctx, q.verts, "#3b2a55", strokeW);
+          drawBaseAt(ctx, q.A, q.B);
+          drawHeightAt(ctx, q.heightBot, q.heightTop, q.A, q.B, false);
+          if (q.labels) {
+            q.labels.forEach((lab) => {
+              lab.hit = pill(ctx, lab.text, lab.pos.x, lab.pos.y, lab.color, lab.kind === "slant" && q.slantGone);
+            });
+          }
+        }
+        drawSparks(ctx);
+      }
+
+      function showPhase(n) {
+        $("ideaBanner").classList.remove("show");
+        if (n === 1 && state.q && state.q.discover) {
+          showDiscover();
+          return;
+        }
+        $("phase1Acts").style.display = n === 1 ? "flex" : "none";
+        $("phase2Acts").classList.toggle("show", n === 2 && !!(state.q && state.q.slantGone));
+        if (n === 1) {
+          $("taskTitle").textContent = "剪剪拼拼";
+          $("hintBar").textContent = "1. 沿高剪下直角三角形　　2. 平移三角形，拼成長方形";
+          $("btnCut").disabled = !!(state.q && state.q.cut);
+          $("btnWand").disabled = !(state.q && state.q.cut && !state.q.slid);
+        } else {
+          $("taskTitle").textContent = "剪剪拼拼";
+          $("hintBar").textContent = "剪拼後面積＝底×高。刪除多餘資料";
+        }
+      }
+      function discStep() {
+        return DISC_STEPS[state.q && state.q.discStep] || null;
+      }
+      function showDiscover() {
+        const q = state.q;
+        const step = discStep();
+        if (!q || !step) return;
+        $("taskTitle").textContent = "剪剪拼拼";
+        $("hintBar").textContent = step.hint;
+        $("phase1Acts").style.display = "none";
+        $("ideaBanner").classList.remove("show");
+        if (step.kind === "choice") {
+          $("phase2Acts").classList.add("show");
+          $("phase2Acts").innerHTML = shuffle(step.options).map((o, i) => {
+            const cls = i === 0 ? "mint" : i === 1 ? "sky" : "lemon";
+            return `<button type="button" class="candy ${cls}" data-ok="${o.ok ? 1 : 0}" data-err="${o.err || ""}">${o.text}</button>`;
+          }).join("");
+        } else {
+          $("phase2Acts").classList.remove("show");
+          $("phase2Acts").innerHTML = "";
+        }
+        draw();
+      }
+      function nextDiscover() {
+        const q = state.q;
+        if (!q) return;
+        q.discStep += 1;
+        if (q.discStep >= DISC_STEPS.length) {
+          q.discover = false;
+          goPhase2();
+          return;
+        }
+        showDiscover();
+      }
+      function renderOptions() {
+        const q = state.q;
+        $("phase2Acts").innerHTML = q.options.map((o, i) => {
+          const cls = i === 0 ? "mint" : i === 1 ? "sky" : "lemon";
+          return `<button type="button" class="candy ${cls}" data-ok="${o.ok ? 1 : 0}" data-err="${o.err || ""}">${o.text}</button>`;
+        }).join("");
+      }
+
+      function animateCut() {
+        const q = state.q;
+        if (state.ended || state.busy || !q || q.phase !== 1 || q.cut) return;
+        state.busy = true;
+        sfx("snap");
+        const t0 = performance.now();
+        const dur = 740;
+        function step(now) {
+          if (state.ended) { state.busy = false; return; }
+          const t = Math.min(1, (now - t0) / dur);
+          q.cutT = easeOut(t);
+          const p = lerp(q.heightTop, q.heightBot, q.cutT);
+          if (Math.random() < 0.35) spawnSparks(p, 1);
+          draw();
+          if (t < 1) requestAnimationFrame(step);
+          else {
+            q.cut = true; q.cutT = 1; state.busy = false;
+            $("btnCut").disabled = true;
+            $("btnWand").disabled = false;
+            setToast(true, "已沿高剪下。請平移拼接。");
+            draw();
+          }
+        }
+        requestAnimationFrame(step);
+      }
+      function finishSlide() {
+        const q = state.q;
+        q.slid = true; q.triOffset = 1; q.showIdea = false; q.discover = true; q.discStep = 0;
+        state.busy = false;
+        $("btnWand").disabled = true;
+        clearToast();
+        sfx("ok");
+        const c = centroid(q.rect);
+        spawnSparks(c, 18);
+        placeDiscLabels(q);
+        showDiscover();
+      }
+      function animateSlide(from) {
+        const q = state.q;
+        if (state.ended || state.busy || !q || !q.cut || q.slid) return;
+        state.busy = true;
+        sfx("magic");
+        const start = from != null ? from : (q.triOffset || 0);
+        const t0 = performance.now();
+        const dur = 2200;
+        function step(now) {
+          if (state.ended) { state.busy = false; return; }
+          const t = Math.min(1, (now - t0) / dur);
+          q.triOffset = start + (1 - start) * easeOut(t);
+          const tri = movingTri(q);
+          if (Math.random() < 0.35) spawnSparks(centroid(tri), 1);
+          draw();
+          if (t < 1) requestAnimationFrame(step);
+          else finishSlide();
+        }
+        requestAnimationFrame(step);
+      }
+
+      function goPhase2() {
+        const q = state.q;
+        if (!q || state.ended) return;
+        q.showIdea = false;
+        q.discover = false;
+        q.phase = 2;
+        q.cut = false; q.slid = false; q.cutT = 0; q.triOffset = 0;
+        $("ideaBanner").classList.remove("show");
+        clearToast();
+        layoutCanvas();
+        renderOptions();
+        showPhase(2);
+        draw();
+      }
+
+      function hitLabel(p, list) {
+        const labs = list || (state.q && state.q.labels);
+        if (!labs) return null;
+        let best = null, bestD = 54;
+        labs.forEach((lab) => {
+          const d = dist(p, lab.pos);
+          if (d < bestD) { bestD = d; best = lab; }
+        });
+        return best;
+      }
+      function pickDiscover(ok, err, btn) {
+        const q = state.q;
+        const step = discStep();
+        if (!q || !q.discover || !step || step.kind !== "choice" || state.ended || state.busy) return;
+        if (ok) {
+          sfx("ok");
+          bounce(btn);
+          setToast(true, "正確。");
+          state.busy = true;
+          setTimeout(() => {
+            state.busy = false;
+            if (state.ended) return;
+            nextDiscover();
+          }, 550);
+        } else {
+          if (err === "slant") state.missSlant += 1;
+          else state.missFormula += 1;
+          sfx("bad");
+          applyPenalty();
+          bounce(btn);
+          btn.classList.add("shake");
+          setTimeout(() => btn.classList.remove("shake"), 400);
+          setToast(false, step.bad || "請再對照兩個圖形。");
+        }
+      }
+      function onDiscTap(lab) {
+        const q = state.q;
+        const step = discStep();
+        if (!q || !q.discover || !step || step.kind !== "tap" || state.ended || state.busy) return;
+        if (lab.kind === step.expect) {
+          sfx("ok");
+          setToast(true, "正確。");
+          spawnSparks(lab.pos, 8);
+          state.busy = true;
+          setTimeout(() => {
+            state.busy = false;
+            if (state.ended) return;
+            nextDiscover();
+          }, 550);
+        } else {
+          if (lab.kind === "slant") state.missSlant += 1;
+          else state.missFormula += 1;
+          sfx("bad");
+          applyPenalty();
+          const msg = lab.kind === "slant" ? step.badSlant : (lab.kind === "base" ? step.badBase : step.badHeight);
+          setToast(false, msg);
+        }
+        draw();
+      }
+      function onLabelClick(lab) {
+        const q = state.q;
+        if (!q || q.phase !== 2 || q.slantGone && lab.kind === "slant") return;
+        if (lab.kind === "slant") {
+          q.slantGone = true;
+          sfx("snap");
+          setToast(true, "已刪除多餘資料。面積＝底×高。");
+          spawnSparks(lab.pos, 10);
+          showPhase(2);
+          draw();
+        } else {
+          state.missSlant += 1;
+          sfx("bad");
+          applyPenalty();
+          setToast(false, lab.kind === "base" ? "這是底。請先刪除多餘資料。" : "這是高。請先刪除多餘資料。");
+          bounce($("hintBar"));
+        }
+      }
+      function pickArea(ok, err, btn) {
+        if (state.ended || state.busy || !state.q || state.q.phase !== 2 || !state.q.slantGone) return;
+        if (ok) {
+          state.busy = true;
+          const used = (performance.now() - state.qStart) / 1000;
+          state.qTimes.push(Math.max(1, Math.round(used)));
+          state.done += 1;
+          sfx("ok");
+          setToast(true, `答對。面積＝${state.q.area} ${state.q.unit}²`);
+          bounce(btn);
+          spawnSparks(centroid(state.q.verts), 12);
+          setTimeout(() => {
+            if (state.ended) return;
+            state.qIndex += 1;
+            newQuestion();
+          }, 700);
+        } else {
+          if (err === "unit") state.missUnit += 1;
+          else if (err === "slant") state.missSlant += 1;
+          else state.missFormula += 1;
+          sfx("bad");
+          applyPenalty();
+          bounce(btn);
+          btn.classList.add("shake");
+          setTimeout(() => btn.classList.remove("shake"), 400);
+          setToast(false, err === "unit"
+            ? "面積單位是平方單位，例如 cm²、m²。"
+            : "斜邊不是高。面積＝底×高。");
+        }
+      }
+
+      function newQuestion() {
+        if (state.ended) return;
+        state.busy = false;
+        state.sparks = [];
+        state.drag = null;
+        clearToast();
+        $("ideaBanner").classList.remove("show");
+        const local = genLocal();
+        state.q = {
+          local, phase: 1, cut: false, slid: false, showIdea: false, slantGone: false,
+          discover: false, discStep: 0,
+          cutT: 0, triOffset: 0, ang: null, fill: pick(FILLS)
+        };
+        $("playerPill").textContent = `${state.classId} ${normalizeId(state.studentId)}`;
+        $("qPill").textContent = `第 ${state.qIndex} 題`;
+        $("taskKind").textContent = "平行四邊形";
+        if (state.qIndex === 1) {
+          layoutCanvas();
+          showPhase(1);
+          draw();
+        } else {
+          goPhase2();
+        }
+        state.qStart = performance.now();
+      }
+
+      function cssPos(e) {
+        const src = e.touches && e.touches[0] ? e.touches[0] : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0] : e);
+        const r = scene.getBoundingClientRect();
+        const w = r.width || 1, h = r.height || 1;
+        return {
+          x: (src.clientX - r.left) * ((state.cssW || w) / w),
+          y: (src.clientY - r.top) * ((state.cssH || h) / h)
+        };
+      }
+      function onDown(e) {
+        if (state.ended || state.busy || !state.q) return;
+        const p = cssPos(e);
+        const q = state.q;
+        if (q.discover) {
+          const step = discStep();
+          if (step && step.kind === "tap") {
+            const lab = hitLabel(p, q.discLabels);
+            if (lab) { e.preventDefault(); onDiscTap(lab); }
+          }
+          return;
+        }
+        if (q.phase === 2) {
+          const lab = hitLabel(p);
+          if (lab) { e.preventDefault(); onLabelClick(lab); }
+          return;
+        }
+        if (q.phase === 1 && q.cut && !q.slid) {
+          const tri = movingTri(q);
+          if (inTri(p, tri[0], tri[1], tri[2])) {
+            e.preventDefault();
+            try { scene.setPointerCapture(e.pointerId); } catch (err) {}
+            state.drag = { id: e.pointerId, start: p, offset0: q.triOffset || 0 };
+            scene.classList.add("dragging");
+          }
+        }
+      }
+      function onMove(e) {
+        if (!state.drag || e.pointerId !== state.drag.id) return;
+        const q = state.q;
+        if (!q) return;
+        e.preventDefault();
+        const p = cssPos(e);
+        const L = len(q.slideVec) || 1;
+        const prog = dot(sub(p, state.drag.start), q.slideVec) / (L * L);
+        q.triOffset = Math.max(0, Math.min(0.98, state.drag.offset0 + prog));
+        if (Math.random() < 0.2) spawnSparks(centroid(movingTri(q)), 1);
+        draw();
+      }
+      function onUp(e) {
+        if (!state.drag || e.pointerId !== state.drag.id) return;
+        const off = state.q ? (state.q.triOffset || 0) : 0;
+        state.drag = null;
+        scene.classList.remove("dragging");
+        if (off >= 0.78) animateSlide(off);
+        else draw();
+      }
+
+      function bindCanvas() {
+        if (state.canvasBound) return;
+        state.canvasBound = true;
+        scene.addEventListener("pointerdown", onDown);
+        scene.addEventListener("pointermove", onMove);
+        scene.addEventListener("pointerup", onUp);
+        scene.addEventListener("pointercancel", onUp);
+      }
+
+      function startGame() {
+        const classId = $("classId").value.trim().toUpperCase();
+        const studentId = $("studentId").value.trim();
+        if (!classId || !studentId) { bounce($("startBtn")); return; }
+        unlockAudio();
+        state.classId = classId; state.studentId = studentId;
+        state.qIndex = 1; state.done = 0; state.qTimes = [];
+        state.missSlant = 0; state.missUnit = 0; state.missFormula = 0;
+        state.ended = false; state.busy = false; state.sheetSent = false;
+        $("reportModal").classList.remove("show");
+        ensureStudent();
+        showScreen("game");
+        startCountdown();
+        requestAnimationFrame(() => newQuestion());
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"'`]/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;"
+        }[c]));
+      }
+      function cmpStudent(a, b) {
+        if (a.classId !== b.classId) return String(a.classId).localeCompare(String(b.classId), "zh-Hant");
+        const na = parseInt(a.studentId, 10), nb = parseInt(b.studentId, 10);
+        if (!Number.isNaN(na) && !Number.isNaN(nb) && na !== nb) return na - nb;
+        return String(a.studentId).localeCompare(String(b.studentId), "zh-Hant", { numeric: true });
+      }
+      function timeDay(t) {
+        const s = String(t || "");
+        const m = s.match(/^\d{4}\/\d{2}\/\d{2}/);
+        return m ? m[0] : (s || "（空白）");
+      }
+      function colValue(key, e) {
+        if (key === "student") return `${e.classId} ${e.studentId}`.trim() || "（空白）";
+        if (key === "score") return String(e.done);
+        if (key === "avg") return e.avgSec ? String(e.avgSec) : "—";
+        if (key === "diagnosis") return e.diagnosis || "（空白）";
+        return timeDay(e.time);
+      }
+      function classLogs() {
+        if (!dashClass || dashClass === "ALL") return dashAllLogs;
+        return dashAllLogs.filter((e) => e.classId === dashClass);
+      }
+      function uniqueValues(key) {
+        const set = new Set();
+        classLogs().forEach((e) => set.add(colValue(key, e)));
+        const arr = [...set];
+        const spec = DASH_COLS.find((c) => c.key === key);
+        arr.sort((a, b) => {
+          if (spec && spec.numeric) {
+            const na = Number(a), nb = Number(b);
+            const fa = Number.isFinite(na), fb = Number.isFinite(nb);
+            if (fa && fb) return na - nb;
+            if (fa) return -1;
+            if (fb) return 1;
+          }
+          return String(a).localeCompare(String(b), "zh-Hant", { numeric: true });
+        });
+        return arr;
+      }
+      function filterActive(key) {
+        const sel = dashFilters[key];
+        return !!(sel && sel.size < uniqueValues(key).length);
+      }
+      function anyFilterOn() { return DASH_COLS.some((c) => filterActive(c.key)); }
+      function passesFilters(e) {
+        return DASH_COLS.every((col) => {
+          const sel = dashFilters[col.key];
+          if (!sel) return true;
+          return sel.has(colValue(col.key, e));
+        });
+      }
+      function sortLogs(logs) {
+        const col = dashSort.col;
+        const m = dashSort.dir === "asc" ? 1 : -1;
+        return logs.slice().sort((a, b) => {
+          let c = 0;
+          if (col === "score") c = a.done - b.done;
+          else if (col === "avg") c = (a.avgSec || 0) - (b.avgSec || 0);
+          else if (col === "student") c = cmpStudent(a, b);
+          else if (col === "time") c = String(a.time || "").localeCompare(String(b.time || ""));
+          else if (col === "diagnosis") c = String(a.diagnosis || "").localeCompare(String(b.diagnosis || ""), "zh-Hant");
+          return (c * m) || cmpStudent(a, b);
+        });
+      }
+      function sortMark(key) {
+        if (dashSort.col !== key) return "";
+        return dashSort.dir === "asc" ? " ▲" : " ▼";
+      }
+      function closeFilterMenu() {
+        dashMenuCol = "";
+        const menu = $("dashFilterMenu");
+        if (menu) menu.classList.remove("show");
+      }
+      function resetDashFilters() {
+        dashFilters = {};
+        dashSort = { col: "student", dir: "asc" };
+        dashClass = "ALL";
+        closeFilterMenu();
+      }
+      function placeFilterMenu(anchor) {
+        const menu = $("dashFilterMenu");
+        const r = anchor.getBoundingClientRect();
+        menu.classList.add("show");
+        const w = menu.offsetWidth || 260;
+        const h = menu.offsetHeight || 280;
+        let left = Math.min(r.left, window.innerWidth - w - 8);
+        let top = r.bottom + 4;
+        if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 4);
+        if (left < 8) left = 8;
+        menu.style.left = left + "px";
+        menu.style.top = top + "px";
+      }
+      function renderFilterMenu(key, q) {
+        const spec = DASH_COLS.find((c) => c.key === key);
+        if (!spec) return;
+        const values = uniqueValues(key);
+        const sel = dashFilters[key];
+        const query = String(q || "").trim();
+        const shown = query ? values.filter((v) => String(v).indexOf(query) !== -1) : values;
+        const allOn = !sel;
+        const sortDesc = key === "time" ? "新 → 舊" : (spec.numeric ? "由高到低" : "由 Z 到 A");
+        const sortAsc = key === "time" ? "舊 → 新" : (spec.numeric ? "由低到高" : "由 A 到 Z");
+        $("dashFilterMenu").innerHTML = `
+          <div class="fm-title">篩選：${escapeHtml(spec.label)}</div>
+          <div class="fm-acts">
+            <button type="button" data-fm="sort-desc">${sortDesc}</button>
+            <button type="button" data-fm="sort-asc">${sortAsc}</button>
+          </div>
+          <input type="search" id="fmSearch" placeholder="搜尋" value="${escapeHtml(query)}" />
+          <div class="fm-acts">
+            <button type="button" data-fm="all">全選</button>
+            <button type="button" data-fm="none">全不選</button>
+            <button type="button" data-fm="clear">清除此欄</button>
+          </div>
+          <div class="opts">
+            ${shown.map((v) => {
+              const on = allOn || sel.has(v);
+              const idx = values.indexOf(v);
+              return `<label><input type="checkbox" data-idx="${idx}" ${on ? "checked" : ""} />${escapeHtml(v)}</label>`;
+            }).join("") || `<div class="empty">沒有項目</div>`}
+          </div>
+        `;
+        const search = $("fmSearch");
+        if (search) {
+          search.focus();
+          const n = search.value.length;
+          try { search.setSelectionRange(n, n); } catch (err) {}
+        }
+      }
+      function openFilterMenu(key, anchor) {
+        dashMenuCol = key;
+        renderFilterMenu(key, "");
+        placeFilterMenu(anchor);
+      }
+      function setColFilter(key, nextSet) {
+        const all = uniqueValues(key);
+        if (!nextSet || nextSet.size === all.length) dashFilters[key] = null;
+        else dashFilters[key] = nextSet;
+        paintDash();
+        if (dashMenuCol === key) {
+          const q = ($("fmSearch") && $("fmSearch").value) || "";
+          renderFilterMenu(key, q);
+          const btn = document.querySelector(`.filter-btn[data-filter="${key}"]`);
+          if (btn) placeFilterMenu(btn);
+        }
+      }
+      function paintDash() {
+        DASH_COLS.forEach((col) => {
+          const sel = dashFilters[col.key];
+          if (!sel) return;
+          const all = new Set(uniqueValues(col.key));
+          const next = new Set([...sel].filter((v) => all.has(v)));
+          dashFilters[col.key] = next.size === all.size ? null : next;
+        });
+        const sourceEl = $("dashSource");
+        const base = classLogs();
+        const logs = base.filter(passesFilters);
+        const avgDone = logs.length ? Math.round((logs.reduce((n, e) => n + (e.done || 0), 0) / logs.length) * 10) / 10 : 0;
+        const slantTotal = logs.reduce((n, e) => n + (e.slantErr || 0), 0);
+        const unitTotal = logs.reduce((n, e) => n + (e.unitErr || 0), 0);
+        const classes = [...new Set(dashAllLogs.map((s) => s.classId).filter(Boolean))].sort();
+        $("classFilter").innerHTML = `<option value="ALL">全部班別</option>` +
+          classes.map((c) => `<option value="${escapeHtml(c)}" ${c === dashClass ? "selected" : ""}>${escapeHtml(c)}</option>`).join("");
+        $("analysisCards").innerHTML = `
+          <div class="stat s1"><b>平均 3 分鐘完成題數</b><strong>${logs.length ? avgDone : "—"}</strong></div>
+          <div class="stat s2"><b>誤用斜邊</b><strong>${slantTotal}</strong></div>
+          <div class="stat s3"><b>單位／公式混淆</b><strong>${unitTotal}</strong></div>
+        `;
+        if ($("dashCount")) $("dashCount").textContent = dashAllLogs.length ? `顯示 ${logs.length} / ${base.length} 筆` : "";
+        if ($("clearFiltersBtn")) $("clearFiltersBtn").style.visibility = anyFilterOn() ? "visible" : "hidden";
+        if (!dashAllLogs.length) {
+          $("studentRecords").innerHTML = `<div class="empty">${sourceEl && sourceEl.textContent.indexOf("未能") >= 0 ? "未能連線 Google 試算表" : "未有紀錄"}</div>`;
+          return;
+        }
+        const ranked = sortLogs(logs);
+        const scores = ranked.map((e) => e.done || 0).slice().sort((a, b) => a - b);
+        const hiCut = scores.length ? scores[Math.max(0, scores.length - Math.ceil(scores.length * 0.2))] || 0 : 0;
+        const loCut = scores.length ? scores[Math.min(scores.length - 1, Math.floor(scores.length * 0.2))] || 0 : 0;
+        const showRank = dashSort.col === "score";
+        const head = (key, extra) => {
+          const spec = DASH_COLS.find((c) => c.key === key);
+          const on = filterActive(key);
+          const sorted = dashSort.col === key ? " sorted" : "";
+          return `<th class="col-h${extra || ""}${sorted}" data-col="${key}">
+            <button type="button" class="col-sort" data-sort="${key}">${escapeHtml(spec.label)}${sortMark(key)}</button>
+            <button type="button" class="filter-btn${on ? " on" : ""}" data-filter="${key}" aria-label="篩選${escapeHtml(spec.label)}">▼</button>
+          </th>`;
+        };
+        const body = ranked.length ? ranked.map((e, i) => {
+          const rank = dashSort.dir === "asc" ? ranked.length - i : i + 1;
+          const hi = e.done >= hiCut && e.done > 0;
+          const lo = e.done <= loCut;
+          return `<tr class="${hi ? "hi" : lo ? "lo" : ""}">
+            ${showRank ? `<td class="rank-cell">${rank}</td>` : ""}
+            <td>${escapeHtml(e.classId)} ${escapeHtml(e.studentId)}</td>
+            <td class="score-cell">${e.done}</td>
+            <td>${e.avgSec || "—"}</td>
+            <td class="diag">${escapeHtml(e.diagnosis)}</td>
+            <td>${escapeHtml(e.time)}</td>
+          </tr>`;
+        }).join("") : `<tr><td colspan="${showRank ? 6 : 5}" class="empty">此篩選沒有紀錄，可按 ▼ 更改</td></tr>`;
+        $("studentRecords").innerHTML = `<table>
+          <thead><tr>
+            ${showRank ? `<th class="score-h">名次</th>` : ""}
+            ${head("student")}
+            ${head("score", " score-h")}
+            ${head("avg")}
+            ${head("diagnosis")}
+            ${head("time")}
+          </tr></thead>
+          <tbody>${body}</tbody>
+        </table>`;
+      }
+      function bestPerStudent(logs) {
+        const map = new Map();
+        (logs || []).forEach((e) => {
+          if (!e.studentId && !e.classId) return;
+          const key = studentKey(e.classId, e.studentId);
+          const prev = map.get(key);
+          const better = !prev
+            || (e.done || 0) > (prev.done || 0)
+            || ((e.done || 0) === (prev.done || 0) && (e.avgSec || 99999) < (prev.avgSec || 99999));
+          if (better) map.set(key, e);
+        });
+        return [...map.values()]
+          .filter((e) => (e.done || 0) > 0)
+          .sort((a, b) => {
+            if ((b.done || 0) !== (a.done || 0)) return (b.done || 0) - (a.done || 0);
+            const ta = a.avgSec || 99999, tb = b.avgSec || 99999;
+            if (ta !== tb) return ta - tb;
+            return cmpStudent(a, b);
+          })
+          .slice(0, 10);
+      }
+      async function renderRank(force) {
+        const seq = ++rankSeq;
+        const box = $("rankRecords");
+        if (!box) return;
+        box.innerHTML = `<div class="empty">載入排行榜…</div>`;
+        let logs = [];
+        let fail = false;
+        try { logs = await loadSheetLogs(!!force); }
+        catch (err) { fail = true; }
+        if (seq !== rankSeq) return;
+        if (fail) {
+          box.innerHTML = `<div class="empty">未能連線 Google 試算表</div>`;
+          return;
+        }
+        const top = bestPerStudent(logs);
+        if (!top.length) {
+          box.innerHTML = `<div class="empty">未有紀錄</div>`;
+          return;
+        }
+        box.innerHTML = `<table>
+          <thead><tr>
+            <th class="score-h">名次</th>
+            <th>班別學號</th>
+            <th class="score-h">答對題數</th>
+          </tr></thead>
+          <tbody>${top.map((e, i) => {
+            const n = i + 1;
+            const cls = n === 1 ? "r1" : n === 2 ? "r2" : n === 3 ? "r3" : "";
+            return `<tr class="${cls}">
+              <td class="rank-cell">${n}</td>
+              <td>${escapeHtml(e.classId)} ${escapeHtml(e.studentId)}</td>
+              <td class="score-cell">${e.done || 0}</td>
+            </tr>`;
+          }).join("")}</tbody>
+        </table>`;
+      }
+      async function renderDashboard(filterClass, force) {
+        const seq = ++dashSeq;
+        if (filterClass) dashClass = filterClass;
+        $("studentRecords").innerHTML = `<div class="empty">載入全班分數…</div>`;
+        $("analysisCards").innerHTML = `
+          <div class="stat s1"><b>平均 3 分鐘完成題數</b><strong>…</strong></div>
+          <div class="stat s2"><b>誤用斜邊</b><strong>…</strong></div>
+          <div class="stat s3"><b>單位／公式混淆</b><strong>…</strong></div>
+        `;
+        let source = "";
+        try { dashAllLogs = await loadSheetLogs(!!force); source = "Google 試算表"; }
+        catch (err) { dashAllLogs = loadStore().logs; source = sheetConfigured() ? "本機（未能連線試算表）" : "本機"; }
+        if (seq !== dashSeq) return;
+        if ($("dashSource")) $("dashSource").textContent = source;
+        paintDash();
+      }
+
+      const confetti = $("confetti");
+      const cfx = confetti.getContext("2d");
+      let pieces = [];
+      function resizeConfetti() { confetti.width = window.innerWidth; confetti.height = window.innerHeight; }
+      function burstConfetti(count) {
+        const colors = ["#ff7eb6", "#5cc8ff", "#ffe066", "#c9b6ff", "#7eecc8"];
+        for (let i = 0; i < count; i++) {
+          pieces.push({
+            x: confetti.width * (0.2 + Math.random() * 0.6), y: -12,
+            r: 4 + Math.random() * 6, c: colors[i % colors.length],
+            vx: -3 + Math.random() * 6, vy: 3 + Math.random() * 5,
+            rot: Math.random() * 360, vr: -8 + Math.random() * 16,
+            life: 80 + Math.random() * 40, shape: i % 3
+          });
+        }
+      }
+      (function tick() {
+        cfx.clearRect(0, 0, confetti.width, confetti.height);
+        pieces = pieces.filter((p) => p.life > 0);
+        pieces.forEach((p) => {
+          p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.rot += p.vr; p.life -= 1;
+          cfx.save(); cfx.translate(p.x, p.y); cfx.rotate(p.rot * Math.PI / 180);
+          cfx.globalAlpha = Math.max(0, p.life / 70); cfx.fillStyle = p.c;
+          if (p.shape === 0) cfx.fillRect(-p.r, -p.r / 2, p.r * 2, p.r);
+          else if (p.shape === 1) { cfx.beginPath(); cfx.arc(0, 0, p.r, 0, Math.PI * 2); cfx.fill(); }
+          else { cfx.beginPath(); cfx.moveTo(0, -p.r); cfx.lineTo(p.r, p.r); cfx.lineTo(-p.r, p.r); cfx.closePath(); cfx.fill(); }
+          cfx.restore();
+        });
+        if (screens.game.classList.contains("active") && (state.sparks.length || (state.q && state.q.discover))) draw();
+        sparkLoop = requestAnimationFrame(tick);
+      })();
+      resizeConfetti();
+      window.addEventListener("resize", () => {
+        resizeConfetti();
+        if (screens.game.classList.contains("active")) { layoutCanvas(); draw(); }
+      });
+      document.addEventListener("touchmove", (e) => {
+        if (e.target.closest(".records, .filter-menu, input")) return;
+        e.preventDefault();
+      }, { passive: false });
+
+      bindCanvas();
+      if (window.ResizeObserver && $("board")) {
+        new ResizeObserver(() => {
+          if (!screens.game.classList.contains("active") || !state.q) return;
+          layoutCanvas();
+          draw();
+        }).observe($("board"));
+      }
+
+      $("startBtn").addEventListener("click", startGame);
+      $("classId").addEventListener("keydown", (e) => { if (e.key === "Enter") $("studentId").focus(); });
+      $("studentId").addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
+      $("rankBtn").addEventListener("click", () => {
+        showScreen("rank");
+        renderRank(true);
+      });
+      $("rankBackBtn").addEventListener("click", () => showScreen("login"));
+      $("rankRefreshBtn").addEventListener("click", () => renderRank(true));
+      $("teacherBtn").addEventListener("click", () => {
+        $("pinModal").classList.add("show");
+        $("pinInput").value = "";
+        $("pinInput").focus();
+      });
+      $("pinCancel").addEventListener("click", () => $("pinModal").classList.remove("show"));
+      $("pinOk").addEventListener("click", () => {
+        if ($("pinInput").value === TEACHER_PIN) {
+          $("pinModal").classList.remove("show");
+          resetDashFilters();
+          showScreen("dash");
+          renderDashboard("ALL", true);
+        } else {
+          bounce($("pinInput"));
+          $("pinInput").classList.add("shake");
+          setTimeout(() => $("pinInput").classList.remove("shake"), 400);
+          $("pinInput").value = "";
+        }
+      });
+      $("pinInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("pinOk").click(); });
+      $("dashBackBtn").addEventListener("click", () => { closeFilterMenu(); showScreen("login"); });
+      $("backLoginBtn").addEventListener("click", () => {
+        if (!state.ended && (state.done > 0 || state.missSlant + state.missUnit + state.missFormula > 0)) {
+          endSession();
+          return;
+        }
+        $("studentId").value = "";
+        $("reportModal").classList.remove("show");
+        showScreen("login");
+        $("studentId").focus();
+      });
+      $("reportBackBtn").addEventListener("click", () => {
+        $("reportModal").classList.remove("show");
+        $("studentId").value = "";
+        showScreen("login");
+        $("studentId").focus();
+      });
+      $("printBtn").addEventListener("click", () => window.print());
+      $("classFilter").addEventListener("change", (e) => {
+        dashClass = e.target.value || "ALL";
+        closeFilterMenu();
+        paintDash();
+      });
+      $("clearFiltersBtn").addEventListener("click", () => {
+        dashFilters = {};
+        closeFilterMenu();
+        paintDash();
+      });
+      $("studentRecords").addEventListener("click", (e) => {
+        const fb = e.target.closest(".filter-btn");
+        if (fb) {
+          e.stopPropagation();
+          const key = fb.getAttribute("data-filter");
+          if (dashMenuCol === key && $("dashFilterMenu").classList.contains("show")) closeFilterMenu();
+          else openFilterMenu(key, fb);
+          return;
+        }
+        const sb = e.target.closest(".col-sort");
+        if (!sb) return;
+        const key = sb.getAttribute("data-sort");
+        if (dashSort.col === key) dashSort.dir = dashSort.dir === "desc" ? "asc" : "desc";
+        else dashSort = { col: key, dir: (key === "student" || key === "diagnosis") ? "asc" : "desc" };
+        paintDash();
+      });
+      $("dashFilterMenu").addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-fm]");
+        if (!btn || !dashMenuCol) return;
+        const act = btn.getAttribute("data-fm");
+        const key = dashMenuCol;
+        if (act === "sort-desc") { dashSort = { col: key, dir: "desc" }; paintDash(); }
+        else if (act === "sort-asc") { dashSort = { col: key, dir: "asc" }; paintDash(); }
+        else if (act === "all" || act === "clear") setColFilter(key, null);
+        else if (act === "none") setColFilter(key, new Set());
+        if (act === "sort-desc" || act === "sort-asc") {
+          const anchor = document.querySelector(`.filter-btn[data-filter="${key}"]`);
+          if (anchor) placeFilterMenu(anchor);
+        }
+      });
+      $("dashFilterMenu").addEventListener("change", (e) => {
+        const inp = e.target;
+        if (!inp.matches || !inp.matches("input[type='checkbox'][data-idx]")) return;
+        const key = dashMenuCol;
+        const values = uniqueValues(key);
+        const val = values[Number(inp.getAttribute("data-idx"))];
+        if (val == null) return;
+        const sel = dashFilters[key] ? new Set(dashFilters[key]) : new Set(values);
+        if (inp.checked) sel.add(val); else sel.delete(val);
+        setColFilter(key, sel);
+      });
+      $("dashFilterMenu").addEventListener("input", (e) => {
+        if (e.target.id !== "fmSearch" || !dashMenuCol) return;
+        renderFilterMenu(dashMenuCol, e.target.value);
+        const btn = document.querySelector(`.filter-btn[data-filter="${dashMenuCol}"]`);
+        if (btn) placeFilterMenu(btn);
+      });
+      document.addEventListener("click", (e) => {
+        const menu = $("dashFilterMenu");
+        if (!menu || !menu.classList.contains("show")) return;
+        if (menu.contains(e.target) || e.target.closest(".filter-btn")) return;
+        closeFilterMenu();
+      });
+      $("refreshDashBtn").addEventListener("click", () => renderDashboard($("classFilter").value || "ALL", true));
+      $("btnCut").addEventListener("click", animateCut);
+      $("btnWand").addEventListener("click", () => animateSlide(state.q && state.q.triOffset));
+      $("phase2Acts").addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-ok]");
+        if (!btn) return;
+        if (state.q && state.q.discover) {
+          pickDiscover(btn.getAttribute("data-ok") === "1", btn.getAttribute("data-err"), btn);
+        } else {
+          pickArea(btn.getAttribute("data-ok") === "1", btn.getAttribute("data-err"), btn);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
