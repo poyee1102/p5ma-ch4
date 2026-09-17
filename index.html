@@ -1987,6 +1987,10 @@
           box.innerHTML = `<div class="empty">未有紀錄</div>`;
           return;
         }
+        const ranks = [];
+        top.forEach((e, i) => {
+          ranks.push(i > 0 && (e.done || 0) === (top[i - 1].done || 0) ? ranks[i - 1] : i + 1);
+        });
         box.innerHTML = `<table>
           <thead><tr>
             <th class="score-h">名次</th>
@@ -1994,7 +1998,7 @@
             <th class="score-h">答對題數</th>
           </tr></thead>
           <tbody>${top.map((e, i) => {
-            const n = i + 1;
+            const n = ranks[i];
             const cls = n === 1 ? "r1" : n === 2 ? "r2" : n === 3 ? "r3" : "";
             return `<tr class="${cls}">
               <td class="rank-cell">${n}</td>
