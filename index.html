@@ -375,7 +375,7 @@
       </div>
       <div class="card play">
         <div class="task-h">
-          <h2 id="taskTitle">剪剪拼拼</h2>
+          <h2 id="taskTitle">任務一：剪剪拼拼</h2>
           <p id="taskKind">平行四邊形</p>
         </div>
         <div class="hintbar" id="hintBar">1. 沿高剪下直角三角形　　2. 平移三角形，拼成長方形</div>
@@ -1378,6 +1378,7 @@
 
       function showPhase(n) {
         $("ideaBanner").classList.remove("show");
+        clearToast();
         if (n === 1 && state.q && state.q.discover) {
           showDiscover();
           return;
@@ -1385,13 +1386,13 @@
         $("phase1Acts").style.display = n === 1 ? "flex" : "none";
         $("phase2Acts").classList.toggle("show", n === 2 && !!(state.q && state.q.slantGone));
         if (n === 1) {
-          $("taskTitle").textContent = "剪剪拼拼";
+          $("taskTitle").textContent = "任務一：剪剪拼拼";
           $("hintBar").textContent = "1. 沿高剪下直角三角形　　2. 平移三角形，拼成長方形";
           $("btnCut").disabled = !!(state.q && state.q.cut);
           $("btnWand").disabled = !(state.q && state.q.cut && !state.q.slid);
         } else {
-          $("taskTitle").textContent = "剪剪拼拼";
-          $("hintBar").textContent = "剪拼後面積＝底×高。刪除多餘資料";
+          $("taskTitle").textContent = "任務二：平行四邊形面積";
+          $("hintBar").textContent = "平行四邊形面積＝底×高，點擊刪除多餘資料";
         }
       }
       function discStep() {
@@ -1401,7 +1402,8 @@
         const q = state.q;
         const step = discStep();
         if (!q || !step) return;
-        $("taskTitle").textContent = "剪剪拼拼";
+        clearToast();
+        $("taskTitle").textContent = "任務一：剪剪拼拼";
         $("hintBar").textContent = step.hint;
         $("phase1Acts").style.display = "none";
         $("ideaBanner").classList.remove("show");
@@ -1455,7 +1457,6 @@
             q.cut = true; q.cutT = 1; state.busy = false;
             $("btnCut").disabled = true;
             $("btnWand").disabled = false;
-            setToast(true, "已沿高剪下。請平移拼接。");
             draw();
           }
         }
@@ -1526,13 +1527,13 @@
         if (ok) {
           sfx("ok");
           bounce(btn);
-          setToast(true, "正確。");
+          clearToast();
           state.busy = true;
           setTimeout(() => {
             state.busy = false;
             if (state.ended) return;
             nextDiscover();
-          }, 550);
+          }, 350);
         } else {
           if (err === "slant") state.missSlant += 1;
           else state.missFormula += 1;
@@ -1550,14 +1551,14 @@
         if (!q || !q.discover || !step || step.kind !== "tap" || state.ended || state.busy) return;
         if (lab.kind === step.expect) {
           sfx("ok");
-          setToast(true, "正確。");
+          clearToast();
           spawnSparks(lab.pos, 8);
           state.busy = true;
           setTimeout(() => {
             state.busy = false;
             if (state.ended) return;
             nextDiscover();
-          }, 550);
+          }, 350);
         } else {
           if (lab.kind === "slant") state.missSlant += 1;
           else state.missFormula += 1;
@@ -1574,7 +1575,7 @@
         if (lab.kind === "slant") {
           q.slantGone = true;
           sfx("snap");
-          setToast(true, "已刪除多餘資料。面積＝底×高。");
+          clearToast();
           spawnSparks(lab.pos, 10);
           showPhase(2);
           draw();
